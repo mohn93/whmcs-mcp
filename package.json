@@ -17,7 +17,12 @@
     "watch": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:live": "tsx src/test.ts"
+    "test:live": "tsx src/test.ts",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "docker:build": "docker build -t whmcs-mcp-server .",
+    "docker:run": "docker run -it --rm --env-file .env whmcs-mcp-server"
   },
   "keywords": [
     "whmcs",
