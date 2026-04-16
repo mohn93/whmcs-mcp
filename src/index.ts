@@ -21,6 +21,8 @@ import { InvoiceDomain } from './whmcs/domains/invoices.js';
 import { registerInvoiceTools } from './mcp/tools/invoices.js';
 import { TimelineDomain } from './whmcs/domains/timeline.js';
 import { registerTimelineTools } from './mcp/tools/timeline.js';
+import { ProductDomain } from './whmcs/domains/products.js';
+import { registerProductTools } from './mcp/tools/products.js';
 import { registerInvestigativePrompts } from './mcp/prompts/investigate.js';
 
 // Environment variables for WHMCS connection
@@ -1957,6 +1959,9 @@ async function main() {
     registerTimelineTools(server, {
         timeline: new TimelineDomain(newClient),
         capabilities,
+    });
+    registerProductTools(server, {
+        products: new ProductDomain(newClient),
     });
 
     registerInvestigativePrompts(server);
