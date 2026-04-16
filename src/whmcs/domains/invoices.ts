@@ -225,6 +225,26 @@ export class InvoiceDomain {
       }));
   }
 
+  async getDunningLog(
+    invoiceId: number,
+    options: { limit?: number } = {},
+  ): Promise<Array<{ date: string; user: string; description: string }>> {
+    const res = await this.client.call<{
+      activity: { entry: Array<{ date: string; user: string; userid: number; description: string }> };
+    }>('GetActivityLog', {
+      description: `Invoice #${invoiceId}`,
+      limitnum: options.limit ?? 100,
+    });
+
+    return (res.activity?.entry ?? [])
+      .filter((e) => e.description.includes(`#${invoiceId}`))
+      .map((e) => ({
+        date: e.date,
+        user: e.user,
+        description: e.description,
+      }));
+  }
+
   async getCreditHistory(
     clientId: number,
     caps: { hasGetCredits: boolean },

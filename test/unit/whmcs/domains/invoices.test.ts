@@ -101,6 +101,20 @@ describe('InvoiceDomain.getOrphanTransactions', () => {
   });
 });
 
+describe('InvoiceDomain.getDunningLog', () => {
+  it('returns payment-failure and invoice-related activity entries', async () => {
+    const log = await inv.getDunningLog(5001);
+    expect(log).toHaveLength(3);
+    expect(log[0].description).toMatch(/Payment Attempt Failed/);
+    expect(log[2].description).toMatch(/Invoice Created/);
+  });
+
+  it('passes invoice number filter to GetActivityLog', async () => {
+    await inv.getDunningLog(5001);
+    expect(server.lastRequest()?.params.get('description')).toContain('5001');
+  });
+});
+
 describe('InvoiceDomain.getCreditHistory', () => {
   it('returns credit entries when capability is present', async () => {
     server.setFixture('GetCredits', creditsFixture);
