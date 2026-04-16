@@ -264,20 +264,7 @@ server.registerTool(
     }
 );
 
-server.registerTool(
-    'whmcs_get_product_groups',
-    {
-        title: 'Get Product Groups',
-        description: 'Get all product groups from WHMCS',
-        inputSchema: {},
-    },
-    async () => {
-        const result = await whmcsClient.getProductGroups();
-        return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-    }
-);
+// whmcs_get_product_groups — moved to src/mcp/tools/products.ts
 
 // ========================================
 // BILLING & INVOICE TOOLS
@@ -397,24 +384,7 @@ server.registerTool(
     }
 );
 
-server.registerTool(
-    'whmcs_apply_credit',
-    {
-        title: 'Apply Credit',
-        description: 'Apply credit to an invoice',
-        inputSchema: {
-            invoiceid: z.number().describe('Invoice ID'),
-            amount: z.number().describe('Amount of credit to apply'),
-            noemail: z.boolean().optional().describe('Do not send email'),
-        },
-    },
-    async (params) => {
-        const result = await whmcsClient.applyCredit(params);
-        return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-    }
-);
+// whmcs_apply_credit — moved to src/mcp/tools/actions.ts (mutation-gated)
 
 server.registerTool(
     'whmcs_get_transactions',
