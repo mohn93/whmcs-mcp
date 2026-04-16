@@ -1,0 +1,19 @@
+{
+  "result": "success",
+  "logs": {
+    "log": [
+      {
+        "date": "2025-01-15 10:02:03",
+        "action": "CreateAccount",
+        "request": "POST /json-api/createacct?domain=example.test&username=expl1234",
+        "response": "Account creation failed: domain already exists on the server"
+      },
+      {
+        "date": "2025-01-15 10:01:58",
+        "action": "CreateAccount",
+        "request": "POST /json-api/createacct?domain=example.test&username=expl1234",
+        "response": "Connection timeout after 30s"
+      }
+    ]
+  }
+}

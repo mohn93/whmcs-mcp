@@ -1,0 +1,10 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "products": {
+    "product": [
+      { "id": 1001, "clientid": 42, "name": "Starter Hosting", "domain": "example.test", "status": "Active", "regdate": "2025-01-15", "nextduedate": "2026-01-15", "serverid": 3 },
+      { "id": 1003, "clientid": 43, "name": "Starter Hosting", "domain": "shop.test", "status": "Suspended", "regdate": "2025-03-01", "nextduedate": "2026-03-01", "serverid": 3 }
+    ]
+  }
+}
