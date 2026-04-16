@@ -1,0 +1,12 @@
+{
+  "result": "success",
+  "stats": {
+    "income_today": "0.00",
+    "income_thismonth": "0.00",
+    "income_thisyear": "0.00",
+    "income_alltime": "0.00",
+    "orders_pending_count": 0,
+    "tickets_awaitingreply_count": 0,
+    "invoices_unpaid_count": 0
+  }
+}
