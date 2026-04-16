@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `whmcs_get_server_usage` — per-server utilization & headroom
 - `whmcs_resync_service` — re-run module action (guarded by `WHMCS_ALLOW_MUTATIONS=true` + `confirm: true`)
 - Startup-time WHMCS version probe; version-gated tools report structured "unsupported" responses on older versions
+- `whmcs_get_invoice_audit` — enriched invoice with line-item origin classification
+- `whmcs_get_payment_attempts` — transactions + failed gateway attempts for an invoice
+- `whmcs_get_orphan_transactions` — transactions with no invoice linkage
+- `whmcs_get_credit_history` — credit applications/refunds per client (WHMCS 7.1+)
+- `whmcs_get_dunning_log` — payment reminders and invoice lifecycle events
 
 ## [1.2.0] - 2026-01-01
 

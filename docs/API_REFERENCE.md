@@ -16,6 +16,7 @@ Complete reference documentation for all tools provided by the WHMCS MCP Server.
 - [Promotion Management](#promotion-management)
 - [Quote Management](#quote-management)
 - [Provisioning Forensics](#provisioning-forensics)
+- [Invoice & Payment Forensics](#invoice--payment-forensics)
 
 ---
 
@@ -1098,4 +1099,209 @@ Re-run a module command on a service. **This is a mutating operation** and requi
   "action": "Create",
   "message": "Module command Create executed successfully"
 }
+```
+
+---
+
+## Invoice & Payment Forensics
+
+Tools for investigating unpaid or incorrect invoices, tracing payment failures, finding orphan transactions, and reviewing dunning/reminder activity.
+
+> **Note:** `whmcs_get_credit_history` requires WHMCS 7.1+. On older versions it returns a structured `{ supported: false, reason: "..." }` response instead of an error.
+
+### whmcs_get_invoice_audit
+
+Returns an invoice with enriched line items — each classified by origin (`service-renewal`, `domain-renewal`, `addon`, `manual`) and linked to service details where applicable.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | number | Yes | The WHMCS invoice ID |
+
+**Example Response:**
+```json
+{
+  "invoiceid": 1042,
+  "invoicenum": "1042",
+  "userid": 1,
+  "date": "2026-04-01",
+  "duedate": "2026-04-15",
+  "datepaid": "0000-00-00 00:00:00",
+  "status": "Unpaid",
+  "paymentmethod": "stripe",
+  "subtotal": "49.95",
+  "credit": "0.00",
+  "tax": "0.00",
+  "total": "49.95",
+  "balance": "49.95",
+  "currencycode": "USD",
+  "items": [
+    {
+      "id": 1,
+      "type": "Hosting",
+      "relid": 42,
+      "description": "Shared Hosting - Basic (01/04/2026 - 01/05/2026)",
+      "amount": "29.95",
+      "taxed": true,
+      "origin": "service-renewal",
+      "service": {
+        "name": "Shared Hosting - Basic",
+        "domain": "example.com",
+        "status": "Active",
+        "billingcycle": "Monthly"
+      }
+    },
+    {
+      "id": 2,
+      "type": "Domain",
+      "relid": 10,
+      "description": "Domain Renewal - example.com",
+      "amount": "15.00",
+      "taxed": false,
+      "origin": "domain-renewal"
+    },
+    {
+      "id": 3,
+      "type": "",
+      "relid": 0,
+      "description": "Late fee",
+      "amount": "5.00",
+      "taxed": false,
+      "origin": "manual"
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_get_payment_attempts
+
+Returns all transactions (successful + failed) for an invoice, plus failed gateway attempts extracted from the activity log.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | number | Yes | The WHMCS invoice ID |
+
+**Example Response:**
+```json
+{
+  "invoiceid": 1042,
+  "transactions": [
+    {
+      "id": 501,
+      "gateway": "stripe",
+      "date": "2026-04-01",
+      "description": "Invoice #1042 Payment",
+      "amountin": "49.95",
+      "amountout": "0.00",
+      "transid": "ch_abc123",
+      "refundid": 0
+    }
+  ],
+  "failedAttempts": [
+    {
+      "date": "2026-03-31 14:22:05",
+      "gateway": "stripe",
+      "error": "Card declined — insufficient funds"
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_get_orphan_transactions
+
+Returns transactions with no invoice linkage (`invoiceid=0`). Optionally filter by client.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | number | No | Optional client ID filter |
+
+**Example Response:**
+```json
+[
+  {
+    "id": 600,
+    "gateway": "paypal",
+    "date": "2026-03-20",
+    "description": "PayPal deposit",
+    "amountin": "100.00",
+    "amountout": "0.00",
+    "transid": "TXN-ORPHAN-001",
+    "invoiceid": 0,
+    "userid": 5
+  }
+]
+```
+
+---
+
+### whmcs_get_credit_history
+
+Returns credit applications and refunds for a client. Requires WHMCS 7.1+; on older versions returns `{ supported: false, reason: "..." }`.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | number | Yes | The WHMCS client ID |
+
+**Example Response (WHMCS 7.1+):**
+```json
+{
+  "supported": true,
+  "credits": [
+    {
+      "id": 1,
+      "date": "2026-03-15",
+      "description": "Credit Applied to Invoice #1040",
+      "amount": "-10.00",
+      "relid": 1040
+    }
+  ]
+}
+```
+
+**Example Response (older WHMCS):**
+```json
+{
+  "supported": false,
+  "reason": "GetCredits API action requires WHMCS 7.1 or later."
+}
+```
+
+---
+
+### whmcs_get_dunning_log
+
+Returns payment reminders, failed-attempt entries, and invoice lifecycle events from the activity log.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | number | Yes | The WHMCS invoice ID |
+| `limit` | number | No | Max entries to return (default 100) |
+
+**Example Response:**
+```json
+[
+  {
+    "date": "2026-04-01 09:00:00",
+    "user": "System",
+    "description": "Invoice #1042 Payment Reminder Sent"
+  },
+  {
+    "date": "2026-04-08 09:00:00",
+    "user": "System",
+    "description": "Invoice #1042 Second Overdue Notice Sent"
+  }
+]
 ```
