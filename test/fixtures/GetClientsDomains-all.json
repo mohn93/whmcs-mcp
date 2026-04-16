@@ -1,0 +1,11 @@
+{
+  "result": "success",
+  "totalresults": 3,
+  "domains": {
+    "domain": [
+      { "id": 301, "userid": 42, "domainname": "example.test", "regdate": "2025-01-15", "expirydate": "2026-01-15", "nextduedate": "2026-01-15", "registrar": "enom", "status": "Active" },
+      { "id": 302, "userid": 42, "domainname": "transfer.test", "regdate": "2025-06-01", "expirydate": "2026-06-01", "nextduedate": "2026-06-01", "registrar": "enom", "status": "Pending Transfer" },
+      { "id": 303, "userid": 43, "domainname": "expiring.test", "regdate": "2024-01-01", "expirydate": "2026-04-30", "nextduedate": "2026-04-30", "registrar": "enom", "status": "Active" }
+    ]
+  }
+}
