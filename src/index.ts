@@ -14,6 +14,9 @@ import { WhmcsApiClient, WhmcsConfig } from './whmcs-client.js';
 import { WhmcsClient as NewWhmcsClient } from './whmcs/client.js';
 import { SystemDomain } from './whmcs/domains/system.js';
 import { registerSystemTools } from './mcp/tools/system.js';
+import { probeCapabilities } from './whmcs/version.js';
+import { ProvisioningDomain } from './whmcs/domains/provisioning.js';
+import { registerProvisioningTools } from './mcp/tools/provisioning.js';
 
 // Environment variables for WHMCS connection
 const config: WhmcsConfig = {
@@ -1926,6 +1929,22 @@ async function main() {
         // Still start the server but tools will fail gracefully
         console.error('Warning: WHMCS configuration incomplete. Tools will not function until configured.');
     }
+
+    let capabilities;
+    try {
+        capabilities = await probeCapabilities(newClient);
+        console.error(`[whmcs-mcp] detected WHMCS version: ${capabilities.version}`);
+    } catch {
+        capabilities = {
+            version: 'unknown', major: 0, minor: 0,
+            hasModuleQueue: false, hasCreateSsoToken: false, hasGetCredits: false,
+        };
+        console.error('[whmcs-mcp] could not probe WHMCS version, capabilities degraded');
+    }
+    registerProvisioningTools(server, {
+        provisioning: new ProvisioningDomain(newClient),
+        capabilities,
+    });
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
