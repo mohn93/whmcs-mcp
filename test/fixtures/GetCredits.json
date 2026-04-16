@@ -1,0 +1,22 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "credits": {
+    "credit": [
+      {
+        "id": 601,
+        "date": "2026-01-05",
+        "description": "Credit Applied to Invoice #5001",
+        "amount": "10.00",
+        "relid": 5001
+      },
+      {
+        "id": 602,
+        "date": "2026-01-20",
+        "description": "Refund for overpayment",
+        "amount": "-5.00",
+        "relid": 0
+      }
+    ]
+  }
+}

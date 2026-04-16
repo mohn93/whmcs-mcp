@@ -7,6 +7,7 @@ import txInvoiceFixture from '../../../fixtures/GetTransactions-invoice.json';
 import txOrphanFixture from '../../../fixtures/GetTransactions-orphans.json';
 import productsFixture from '../../../fixtures/GetClientsProducts-for-invoice.json';
 import activityFixture from '../../../fixtures/GetActivityLog-invoice.json';
+import creditsFixture from '../../../fixtures/GetCredits.json';
 
 let server: MockWhmcsServer;
 let inv: InvoiceDomain;
@@ -97,5 +98,26 @@ describe('InvoiceDomain.getOrphanTransactions', () => {
     expect(orphans[0].gateway).toBe('paypal');
     expect(orphans[0].date).toBe('2026-02-01 11:00:00');
     server.setFixture('GetTransactions', txInvoiceFixture);
+  });
+});
+
+describe('InvoiceDomain.getCreditHistory', () => {
+  it('returns credit entries when capability is present', async () => {
+    server.setFixture('GetCredits', creditsFixture);
+    const result = await inv.getCreditHistory(42, { hasGetCredits: true });
+    expect(result.supported).toBe(true);
+    if (result.supported) {
+      expect(result.credits).toHaveLength(2);
+      expect(result.credits[0].amount).toBe('10.00');
+      expect(result.credits[1].amount).toBe('-5.00');
+    }
+  });
+
+  it('reports unsupported when capability is missing', async () => {
+    const result = await inv.getCreditHistory(42, { hasGetCredits: false });
+    expect(result.supported).toBe(false);
+    if (!result.supported) {
+      expect(result.reason).toMatch(/7\.1/);
+    }
   });
 });

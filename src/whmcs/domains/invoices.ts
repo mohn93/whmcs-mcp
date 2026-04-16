@@ -224,4 +224,33 @@ export class InvoiceDomain {
         userid: t.userid,
       }));
   }
+
+  async getCreditHistory(
+    clientId: number,
+    caps: { hasGetCredits: boolean },
+  ): Promise<
+    | { supported: true; credits: Array<{
+        id: number; date: string; description: string;
+        amount: string; relid: number;
+      }> }
+    | { supported: false; reason: string }
+  > {
+    if (!caps.hasGetCredits) {
+      return {
+        supported: false,
+        reason: 'GetCredits API action requires WHMCS 7.1 or later.',
+      };
+    }
+    const res = await this.client.call<{
+      credits: { credit: Array<{
+        id: number; date: string; description: string;
+        amount: string; relid: number;
+      }> };
+    }>('GetCredits', { clientid: clientId });
+
+    return {
+      supported: true,
+      credits: res.credits?.credit ?? [],
+    };
+  }
 }
