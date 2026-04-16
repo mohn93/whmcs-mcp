@@ -114,7 +114,8 @@ export class HealthDomain {
     return { stats, servers, moduleQueue, errors };
   }
 
-  async findInconsistencies(): Promise<Inconsistencies> {
+  async findInconsistencies(options: { limit?: number } = {}): Promise<Inconsistencies> {
+    const limit = options.limit ?? 25;
     const errors: string[] = [];
     const now = new Date();
 
@@ -150,7 +151,7 @@ export class HealthDomain {
         })
         .filter((inv) => inv.daysOverdue > 90)
         .sort((a, b) => b.daysOverdue - a.daysOverdue)
-        .slice(0, 50);
+        .slice(0, limit);
     } catch (err) {
       errors.push(`GetInvoices (Overdue) failed: ${(err as Error).message}`);
 
@@ -189,7 +190,7 @@ export class HealthDomain {
           // Skip ancient invoices (> 2 years old) — likely abandoned accounts
           .filter((inv) => inv.daysOverdue < 730)
           .sort((a, b) => b.daysOverdue - a.daysOverdue)
-          .slice(0, 50);
+          .slice(0, limit);
 
         errors.push('Fell back to Unpaid status with 90-730 day filter');
       } catch (err2) {
@@ -244,7 +245,7 @@ export class HealthDomain {
           };
         })
         .sort((a, b) => b.daysStale - a.daysStale)
-        .slice(0, 50);
+        .slice(0, limit);
     } catch (err) {
       errors.push(`GetClientsProducts (Pending) failed: ${(err as Error).message}`);
     }

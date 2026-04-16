@@ -39,10 +39,11 @@ export function registerInvoiceTools(server: any, deps: InvoiceToolDeps): void {
       description: 'Returns all transactions (successful + failed) for an invoice, plus failed gateway attempts extracted from the activity log.',
       inputSchema: {
         invoiceId: z.number().describe('The WHMCS invoice ID'),
+        limit: z.number().optional().describe('Max activity log entries to scan (default 50)'),
       },
     },
-    async ({ invoiceId }: { invoiceId: number }) => {
-      try { return ok(await deps.invoices.getPaymentAttempts(invoiceId)); }
+    async ({ invoiceId, limit }: { invoiceId: number; limit?: number }) => {
+      try { return ok(await deps.invoices.getPaymentAttempts(invoiceId, { limit })); }
       catch (e) { return fail((e as Error).message); }
     },
   );
@@ -54,10 +55,16 @@ export function registerInvoiceTools(server: any, deps: InvoiceToolDeps): void {
       description: 'Returns transactions with no invoice linkage (invoiceid=0). Optionally filter by client.',
       inputSchema: {
         clientId: z.number().optional().describe('Optional client ID filter'),
+        limit: z.number().optional().describe('Max transactions to fetch (default 25)'),
       },
     },
-    async ({ clientId }: { clientId?: number }) => {
-      try { return ok(await deps.invoices.getOrphanTransactions(clientId ? { clientid: clientId } : {})); }
+    async ({ clientId, limit }: { clientId?: number; limit?: number }) => {
+      try {
+        const opts: { clientid?: number; limit?: number } = {};
+        if (clientId) opts.clientid = clientId;
+        if (limit != null) opts.limit = limit;
+        return ok(await deps.invoices.getOrphanTransactions(opts));
+      }
       catch (e) { return fail((e as Error).message); }
     },
   );
@@ -69,10 +76,11 @@ export function registerInvoiceTools(server: any, deps: InvoiceToolDeps): void {
       description: 'Returns credit applications and refunds for a client (WHMCS 7.1+).',
       inputSchema: {
         clientId: z.number().describe('The WHMCS client ID'),
+        limit: z.number().optional().describe('Max credit entries to return (default 25)'),
       },
     },
-    async ({ clientId }: { clientId: number }) => {
-      try { return ok(await deps.invoices.getCreditHistory(clientId, deps.capabilities)); }
+    async ({ clientId, limit }: { clientId: number; limit?: number }) => {
+      try { return ok(await deps.invoices.getCreditHistory(clientId, deps.capabilities, { limit })); }
       catch (e) { return fail((e as Error).message); }
     },
   );

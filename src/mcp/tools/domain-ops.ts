@@ -21,10 +21,12 @@ export function registerDomainOpsTools(server: any, deps: DomainOpsToolDeps): vo
       title: 'Get Pending Transfers',
       description:
         'Returns all domains currently in "Pending Transfer" status.',
-      inputSchema: {},
+      inputSchema: {
+        limit: z.number().optional().describe('Max domains to fetch (default 25)'),
+      },
     },
-    async () => {
-      try { return ok(await deps.domainOps.getPendingTransfers()); }
+    async ({ limit }: { limit?: number }) => {
+      try { return ok(await deps.domainOps.getPendingTransfers({ limit })); }
       catch (e) { return fail((e as Error).message); }
     },
   );
@@ -37,10 +39,11 @@ export function registerDomainOpsTools(server: any, deps: DomainOpsToolDeps): vo
         'Returns domains expiring within the specified number of days ahead.',
       inputSchema: {
         daysAhead: z.number().optional().describe('Number of days to look ahead (default 30)'),
+        limit: z.number().optional().describe('Max domains to fetch (default 25)'),
       },
     },
-    async ({ daysAhead }: { daysAhead?: number }) => {
-      try { return ok(await deps.domainOps.getUpcomingRenewals(daysAhead)); }
+    async ({ daysAhead, limit }: { daysAhead?: number; limit?: number }) => {
+      try { return ok(await deps.domainOps.getUpcomingRenewals(daysAhead, { limit })); }
       catch (e) { return fail((e as Error).message); }
     },
   );

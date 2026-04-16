@@ -153,7 +153,8 @@ export class InvoiceDomain {
     };
   }
 
-  async getPaymentAttempts(invoiceId: number): Promise<PaymentAttempts> {
+  async getPaymentAttempts(invoiceId: number, options: { limit?: number } = {}): Promise<PaymentAttempts> {
+    const limit = options.limit ?? 50;
     const txRes = await this.client.call<{
       transactions: { transaction: Array<{
         id: number; gateway: string; date: string; description: string;
@@ -177,7 +178,7 @@ export class InvoiceDomain {
       activity: { entry: Array<{ date: string; description: string }> };
     }>('GetActivityLog', {
       description: `Invoice #${invoiceId}`,
-      limitnum: 100,
+      limitnum: limit,
     });
 
     const failedAttempts = (actRes.activity?.entry ?? [])
@@ -195,20 +196,24 @@ export class InvoiceDomain {
     return { invoiceid: invoiceId, transactions, failedAttempts };
   }
 
-  async getOrphanTransactions(options: { clientid?: number } = {}): Promise<
+  async getOrphanTransactions(options: { clientid?: number; limit?: number } = {}): Promise<
     Array<{
       id: number; gateway: string; date: string; description: string;
       amountin: string; amountout: string; transid: string;
       invoiceid: number; userid: number;
     }>
   > {
+    const params: Record<string, unknown> = {};
+    if (options.clientid) params.clientid = options.clientid;
+    params.limitnum = options.limit ?? 25;
+
     const res = await this.client.call<{
       transactions: { transaction: Array<{
         id: number; userid: number; gateway: string; date: string;
         description: string; amountin: string; amountout: string;
         transid: string; invoiceid: number;
       }> };
-    }>('GetTransactions', options.clientid ? { clientid: options.clientid } : {});
+    }>('GetTransactions', params);
 
     return (res.transactions?.transaction ?? [])
       .filter((t) => t.invoiceid === 0)
@@ -248,6 +253,7 @@ export class InvoiceDomain {
   async getCreditHistory(
     clientId: number,
     caps: { hasGetCredits: boolean },
+    options: { limit?: number } = {},
   ): Promise<
     | { supported: true; credits: Array<{
         id: number; date: string; description: string;
@@ -266,7 +272,7 @@ export class InvoiceDomain {
         id: number; date: string; description: string;
         amount: string; relid: number;
       }> };
-    }>('GetCredits', { clientid: clientId });
+    }>('GetCredits', { clientid: clientId, limitnum: options.limit ?? 25 });
 
     return {
       supported: true,

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { HealthDomain } from '../../whmcs/domains/health.js';
 import type { Capabilities } from '../../whmcs/version.js';
 
@@ -42,11 +43,13 @@ export function registerHealthTools(server: any, deps: HealthToolDeps): void {
       title: 'Find Inconsistencies',
       description:
         'Scans for data integrity issues: invoices overdue more than 90 days and services stuck in Pending status for more than 7 days.',
-      inputSchema: {},
+      inputSchema: {
+        limit: z.number().optional().describe('Max results per category — overdue invoices and stale services (default 25)'),
+      },
     },
-    async () => {
+    async ({ limit }: { limit?: number }) => {
       try {
-        return ok(await deps.health.findInconsistencies());
+        return ok(await deps.health.findInconsistencies({ limit }));
       } catch (e) {
         return fail((e as Error).message);
       }

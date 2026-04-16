@@ -16,13 +16,14 @@ export interface ClientTimeline {
 export class TimelineDomain {
   constructor(private client: WhmcsClient) {}
 
-  async getClientTimeline(clientId: number): Promise<ClientTimeline> {
+  async getClientTimeline(clientId: number, options: { limitPerCategory?: number } = {}): Promise<ClientTimeline> {
+    const limit = options.limitPerCategory ?? 10;
     const [orders, invoices, products, tickets, domains] = await Promise.all([
-      this.fetchOrders(clientId),
-      this.fetchInvoices(clientId),
-      this.fetchServices(clientId),
-      this.fetchTickets(clientId),
-      this.fetchDomains(clientId),
+      this.fetchOrders(clientId, limit),
+      this.fetchInvoices(clientId, limit),
+      this.fetchServices(clientId, limit),
+      this.fetchTickets(clientId, limit),
+      this.fetchDomains(clientId, limit),
     ]);
 
     const events: TimelineEvent[] = [
@@ -34,11 +35,11 @@ export class TimelineDomain {
     return { clientId, events };
   }
 
-  private async fetchOrders(clientId: number): Promise<TimelineEvent[]> {
+  private async fetchOrders(clientId: number, limit: number): Promise<TimelineEvent[]> {
     try {
       const res = await this.client.call<{
         orders: { order: Array<{ id: number; date: string; amount: string; status: string }> };
-      }>('GetOrders', { userid: clientId });
+      }>('GetOrders', { userid: clientId, limitnum: limit });
       return (res.orders?.order ?? []).map((o) => ({
         type: 'order' as const,
         id: o.id,
@@ -49,11 +50,11 @@ export class TimelineDomain {
     } catch { return []; }
   }
 
-  private async fetchInvoices(clientId: number): Promise<TimelineEvent[]> {
+  private async fetchInvoices(clientId: number, limit: number): Promise<TimelineEvent[]> {
     try {
       const res = await this.client.call<{
         invoices: { invoice: Array<{ id: number; date: string; total: string; status: string }> };
-      }>('GetInvoices', { userid: clientId });
+      }>('GetInvoices', { userid: clientId, limitnum: limit });
       return (res.invoices?.invoice ?? []).map((i) => ({
         type: 'invoice' as const,
         id: i.id,
@@ -64,11 +65,11 @@ export class TimelineDomain {
     } catch { return []; }
   }
 
-  private async fetchServices(clientId: number): Promise<TimelineEvent[]> {
+  private async fetchServices(clientId: number, limit: number): Promise<TimelineEvent[]> {
     try {
       const res = await this.client.call<{
         products: { product: Array<{ id: number; regdate: string; name: string; domain: string; status: string }> };
-      }>('GetClientsProducts', { clientid: clientId });
+      }>('GetClientsProducts', { clientid: clientId, limitnum: limit });
       return (res.products?.product ?? []).map((p) => ({
         type: 'service' as const,
         id: p.id,
@@ -79,11 +80,11 @@ export class TimelineDomain {
     } catch { return []; }
   }
 
-  private async fetchTickets(clientId: number): Promise<TimelineEvent[]> {
+  private async fetchTickets(clientId: number, limit: number): Promise<TimelineEvent[]> {
     try {
       const res = await this.client.call<{
         tickets: { ticket: Array<{ id: number; date: string; subject: string; status: string }> };
-      }>('GetTickets', { clientid: clientId });
+      }>('GetTickets', { clientid: clientId, limitnum: limit });
       return (res.tickets?.ticket ?? []).map((t) => ({
         type: 'ticket' as const,
         id: t.id,
@@ -94,11 +95,11 @@ export class TimelineDomain {
     } catch { return []; }
   }
 
-  private async fetchDomains(clientId: number): Promise<TimelineEvent[]> {
+  private async fetchDomains(clientId: number, limit: number): Promise<TimelineEvent[]> {
     try {
       const res = await this.client.call<{
         domains: { domain: Array<{ id: number; regdate: string; domainname: string; expirydate: string; status: string }> };
-      }>('GetClientsDomains', { clientid: clientId });
+      }>('GetClientsDomains', { clientid: clientId, limitnum: limit });
       return (res.domains?.domain ?? []).map((d) => ({
         type: 'domain' as const,
         id: d.id,

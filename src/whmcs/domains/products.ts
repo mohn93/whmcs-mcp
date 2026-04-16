@@ -42,7 +42,7 @@ export class ProductDomain {
     return res.productgroups?.productgroup ?? [];
   }
 
-  async getClientAddons(clientId: number): Promise<Array<{
+  async getClientAddons(clientId: number, options: { limit?: number } = {}): Promise<Array<{
     id: number; name: string; domain: string; status: string;
     billingcycle: string; recurringamount: string;
   }>> {
@@ -51,7 +51,7 @@ export class ProductDomain {
         id: number; name: string; domain: string; status: string;
         billingcycle: string; recurringamount: string; groupname: string;
       }> };
-    }>('GetClientsProducts', { clientid: clientId });
+    }>('GetClientsProducts', { clientid: clientId, limitnum: options.limit ?? 25 });
     return (res.products?.product ?? []).map((p) => ({
       id: p.id, name: p.name, domain: p.domain,
       status: p.status, billingcycle: p.billingcycle,

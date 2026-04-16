@@ -53,10 +53,11 @@ export function registerProductTools(server: any, deps: ProductToolDeps): void {
         'Returns a simplified list of products/services for a client, including status, billing cycle, and recurring amount.',
       inputSchema: {
         clientId: z.number().describe('The WHMCS client ID'),
+        limit: z.number().optional().describe('Max products to return (default 25)'),
       },
     },
-    async ({ clientId }: { clientId: number }) => {
-      try { return ok(await deps.products.getClientAddons(clientId)); }
+    async ({ clientId, limit }: { clientId: number; limit?: number }) => {
+      try { return ok(await deps.products.getClientAddons(clientId, { limit })); }
       catch (e) { return fail((e as Error).message); }
     },
   );

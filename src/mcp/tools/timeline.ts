@@ -24,10 +24,11 @@ export function registerTimelineTools(server: any, deps: TimelineToolDeps): void
       description: 'Returns a chronological timeline of all client events: orders, invoices, services, tickets, and domains — sorted newest-first.',
       inputSchema: {
         clientId: z.number().describe('The WHMCS client ID'),
+        limitPerCategory: z.number().optional().describe('Max results per category — orders, invoices, services, tickets, domains (default 10)'),
       },
     },
-    async ({ clientId }: { clientId: number }) => {
-      try { return ok(await deps.timeline.getClientTimeline(clientId)); }
+    async ({ clientId, limitPerCategory }: { clientId: number; limitPerCategory?: number }) => {
+      try { return ok(await deps.timeline.getClientTimeline(clientId, { limitPerCategory })); }
       catch (e) { return fail((e as Error).message); }
     },
   );

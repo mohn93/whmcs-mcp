@@ -14,20 +14,22 @@ export interface DomainRecord {
 export class DomainOpsDomain {
   constructor(private client: WhmcsClient) {}
 
-  private async getAllDomains(): Promise<DomainRecord[]> {
+  private async getAllDomains(options: { limit?: number } = {}): Promise<DomainRecord[]> {
+    const params: Record<string, unknown> = {};
+    if (options.limit != null) params.limitnum = options.limit;
     const res = await this.client.call<{
       domains: { domain: DomainRecord[] };
-    }>('GetClientsDomains');
+    }>('GetClientsDomains', params);
     return res.domains?.domain ?? [];
   }
 
-  async getPendingTransfers(): Promise<DomainRecord[]> {
-    const domains = await this.getAllDomains();
+  async getPendingTransfers(options: { limit?: number } = {}): Promise<DomainRecord[]> {
+    const domains = await this.getAllDomains({ limit: options.limit ?? 25 });
     return domains.filter((d) => d.status === 'Pending Transfer');
   }
 
-  async getUpcomingRenewals(daysAhead: number = 30): Promise<DomainRecord[]> {
-    const domains = await this.getAllDomains();
+  async getUpcomingRenewals(daysAhead: number = 30, options: { limit?: number } = {}): Promise<DomainRecord[]> {
+    const domains = await this.getAllDomains({ limit: options.limit ?? 25 });
     const now = new Date();
     const cutoff = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
     return domains.filter((d) => {
