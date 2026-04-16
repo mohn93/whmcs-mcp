@@ -21,6 +21,7 @@ import { InvoiceDomain } from './whmcs/domains/invoices.js';
 import { registerInvoiceTools } from './mcp/tools/invoices.js';
 import { TimelineDomain } from './whmcs/domains/timeline.js';
 import { registerTimelineTools } from './mcp/tools/timeline.js';
+import { registerInvestigativePrompts } from './mcp/prompts/investigate.js';
 
 // Environment variables for WHMCS connection
 const config: WhmcsConfig = {
@@ -1957,6 +1958,8 @@ async function main() {
         timeline: new TimelineDomain(newClient),
         capabilities,
     });
+
+    registerInvestigativePrompts(server);
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
