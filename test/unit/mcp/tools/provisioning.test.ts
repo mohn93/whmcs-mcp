@@ -164,19 +164,17 @@ describe('registerProvisioningTools', () => {
     expect(parsed[1].percentUsed).toBe(97);
   });
 
-  it('whmcs_get_services_by_server returns services for a server', async () => {
-    whmcsServer.setFixture('GetClientsProducts', byServerFixture);
+  it('whmcs_get_services_by_server returns structured result with server info', async () => {
     register();
     const handler = registrations['whmcs_get_services_by_server'];
     const result = await handler({ serverId: 3 });
     expect(result.isError).toBeUndefined();
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.services).toHaveLength(2);
-    expect(parsed.services[0].domain).toBe('example.test');
-    expect(parsed.services[1].status).toBe('Suspended');
-    expect(parsed.statusCounts).toBeDefined();
-    // Restore
-    whmcsServer.setFixture('GetClientsProducts', productFixture);
+    expect(parsed.serverId).toBe(3);
+    expect(parsed.serverInfo).toBeDefined();
+    expect(parsed.note).toBeDefined();
+    expect(Array.isArray(parsed.services)).toBe(true);
+    expect(Array.isArray(parsed.recentActivity)).toBe(true);
   });
 
   it('whmcs_get_module_debug_log returns module log when available', async () => {

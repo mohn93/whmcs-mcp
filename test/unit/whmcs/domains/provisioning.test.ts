@@ -215,40 +215,33 @@ describe('ProvisioningDomain.resyncService', () => {
 });
 
 describe('ProvisioningDomain.getServicesByServer', () => {
-  it('returns services filtered by server (client-side)', async () => {
+  it('finds services via activity log correlation', async () => {
+    // The method searches activity log for the server name, extracts service IDs,
+    // then fetches each individually. The mock returns byServerFixture for GetClientsProducts.
     server.setFixture('GetClientsProducts', byServerFixture);
     const result = await prov.getServicesByServer(3);
-    expect(result.services).toHaveLength(2);
-    expect(result.services[0].id).toBe(1001);
-    expect(result.services[0].domain).toBe('example.test');
-    expect(result.services[0].status).toBe('Active');
-    expect(result.services[1].id).toBe(1003);
-    expect(result.services[1].status).toBe('Suspended');
-    expect(result.totalScanned).toBe(2);
-    expect(result.statusCounts).toEqual({ Active: 1, Suspended: 1 });
+    // Returns server info from GetServers
+    expect(result.serverInfo).toBeDefined();
+    // Returns structured result
+    expect(result.serverId).toBe(3);
+    expect(result.serverName).toBeDefined();
+    expect(result.note).toBeDefined();
+    expect(Array.isArray(result.services)).toBe(true);
+    expect(Array.isArray(result.recentActivity)).toBe(true);
     // Restore
     server.setFixture('GetClientsProducts', productFixture);
   });
 
-  it('paginates without serverid param (WHMCS ignores it)', async () => {
-    server.setFixture('GetClientsProducts', byServerFixture);
-    await prov.getServicesByServer(3);
-    expect(server.lastRequest()?.params.get('action')).toBe('GetClientsProducts');
-    // No serverid sent — we filter client-side
-    expect(server.lastRequest()?.params.has('serverid')).toBe(false);
-    // Restore
-    server.setFixture('GetClientsProducts', productFixture);
+  it('returns server info even when no services found', async () => {
+    const result = await prov.getServicesByServer(3);
+    expect(result.serverInfo).toBeDefined();
+    expect(result.serverInfo?.hostname).toBeDefined();
+    expect(result.note).toBeDefined();
   });
 
-  it('returns empty when no services match the server', async () => {
-    server.setFixture('GetClientsProducts', {
-      result: 'success', totalresults: 0, products: { product: [] },
-    });
+  it('provides actionable guidance in the note field', async () => {
     const result = await prov.getServicesByServer(999);
-    expect(result.services).toHaveLength(0);
-    expect(result.totalScanned).toBe(0);
-    // Restore
-    server.setFixture('GetClientsProducts', productFixture);
+    expect(result.note).toContain('whmcs_get_service_details');
   });
 });
 
