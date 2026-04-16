@@ -19,6 +19,8 @@ import { ProvisioningDomain } from './whmcs/domains/provisioning.js';
 import { registerProvisioningTools } from './mcp/tools/provisioning.js';
 import { InvoiceDomain } from './whmcs/domains/invoices.js';
 import { registerInvoiceTools } from './mcp/tools/invoices.js';
+import { TimelineDomain } from './whmcs/domains/timeline.js';
+import { registerTimelineTools } from './mcp/tools/timeline.js';
 
 // Environment variables for WHMCS connection
 const config: WhmcsConfig = {
@@ -1949,6 +1951,10 @@ async function main() {
     });
     registerInvoiceTools(server, {
         invoices: new InvoiceDomain(newClient),
+        capabilities,
+    });
+    registerTimelineTools(server, {
+        timeline: new TimelineDomain(newClient),
         capabilities,
     });
 
