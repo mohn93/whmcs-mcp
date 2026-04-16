@@ -55,6 +55,49 @@ describe('InvoiceDomain.getInvoiceAudit', () => {
     await inv.getInvoiceAudit(5001);
     expect(server.lastRequest()?.params.get('invoiceid')).toBe('5001');
   });
+
+  it('classifies domain-type line item as domain-renewal', async () => {
+    server.setFixture('GetInvoice', {
+      result: 'success',
+      invoiceid: 5002, invoicenum: '5002', userid: 42,
+      date: '2026-01-01', duedate: '2026-01-15', datepaid: '0000-00-00 00:00:00',
+      status: 'Unpaid', paymentmethod: 'stripe',
+      subtotal: '15.00', credit: '0.00', tax: '0.00', total: '15.00', balance: '15.00',
+      currencycode: 'USD',
+      items: {
+        item: [
+          { id: 201, type: 'Domain', relid: 301, description: 'Domain Renewal - example.test', amount: '15.00', taxed: 0 },
+        ],
+      },
+    });
+    const audit = await inv.getInvoiceAudit(5002);
+    expect(audit.items).toHaveLength(1);
+    expect(audit.items[0].origin).toBe('domain-renewal');
+    // Restore
+    server.setFixture('GetInvoice', invoiceFixture);
+  });
+
+  it('classifies addon-type line item as addon', async () => {
+    server.setFixture('GetInvoice', {
+      result: 'success',
+      invoiceid: 5003, invoicenum: '5003', userid: 42,
+      date: '2026-01-01', duedate: '2026-01-15', datepaid: '0000-00-00 00:00:00',
+      status: 'Unpaid', paymentmethod: 'stripe',
+      subtotal: '5.00', credit: '0.00', tax: '0.00', total: '5.00', balance: '5.00',
+      currencycode: 'USD',
+      items: {
+        item: [
+          { id: 301, type: 'Addon', relid: 50, description: 'SSL Certificate Addon', amount: '5.00', taxed: 1 },
+        ],
+      },
+    });
+    const audit = await inv.getInvoiceAudit(5003);
+    expect(audit.items).toHaveLength(1);
+    expect(audit.items[0].origin).toBe('addon');
+    expect(audit.items[0].taxed).toBe(true);
+    // Restore
+    server.setFixture('GetInvoice', invoiceFixture);
+  });
 });
 
 describe('InvoiceDomain.getPaymentAttempts', () => {
@@ -78,6 +121,19 @@ describe('InvoiceDomain.getPaymentAttempts', () => {
     const last = server.lastRequest();
     expect(last?.params.get('action')).toBe('GetActivityLog');
   });
+
+  it('returns empty failedAttempts array when no failures in activity log', async () => {
+    server.setFixture('GetActivityLog', {
+      result: 'success', totalresults: 0, activity: { entry: [] },
+    });
+    const attempts = await inv.getPaymentAttempts(5001);
+    expect(attempts.failedAttempts).toHaveLength(0);
+    expect(attempts.failedAttempts).toEqual([]);
+    // transactions should still be returned
+    expect(attempts.transactions).toHaveLength(2);
+    // Restore
+    server.setFixture('GetActivityLog', activityFixture);
+  });
 });
 
 describe('InvoiceDomain.getOrphanTransactions', () => {
@@ -99,6 +155,20 @@ describe('InvoiceDomain.getOrphanTransactions', () => {
     expect(orphans[0].date).toBe('2026-02-01 11:00:00');
     server.setFixture('GetTransactions', txInvoiceFixture);
   });
+
+  it('sends clientid param when filter is provided', async () => {
+    server.setFixture('GetTransactions', txOrphanFixture);
+    await inv.getOrphanTransactions({ clientid: 42 });
+    expect(server.lastRequest()?.params.get('clientid')).toBe('42');
+    server.setFixture('GetTransactions', txInvoiceFixture);
+  });
+
+  it('returns empty array when all transactions have invoices', async () => {
+    // txInvoiceFixture has transactions with invoiceid=5001
+    server.setFixture('GetTransactions', txInvoiceFixture);
+    const orphans = await inv.getOrphanTransactions();
+    expect(orphans).toHaveLength(0);
+  });
 });
 
 describe('InvoiceDomain.getDunningLog', () => {
@@ -112,6 +182,17 @@ describe('InvoiceDomain.getDunningLog', () => {
   it('passes invoice number filter to GetActivityLog', async () => {
     await inv.getDunningLog(5001);
     expect(server.lastRequest()?.params.get('description')).toContain('5001');
+  });
+
+  it('returns empty array when activity log has no entries', async () => {
+    server.setFixture('GetActivityLog', {
+      result: 'success', totalresults: 0, activity: { entry: [] },
+    });
+    const log = await inv.getDunningLog(5001);
+    expect(log).toHaveLength(0);
+    expect(log).toEqual([]);
+    // Restore
+    server.setFixture('GetActivityLog', activityFixture);
   });
 });
 
@@ -133,5 +214,19 @@ describe('InvoiceDomain.getCreditHistory', () => {
     if (!result.supported) {
       expect(result.reason).toMatch(/7\.1/);
     }
+  });
+
+  it('returns empty credits array when client has no credit history', async () => {
+    server.setFixture('GetCredits', {
+      result: 'success', totalresults: 0, credits: { credit: [] },
+    });
+    const result = await inv.getCreditHistory(42, { hasGetCredits: true });
+    expect(result.supported).toBe(true);
+    if (result.supported) {
+      expect(result.credits).toHaveLength(0);
+      expect(result.credits).toEqual([]);
+    }
+    // Restore
+    server.setFixture('GetCredits', creditsFixture);
   });
 });

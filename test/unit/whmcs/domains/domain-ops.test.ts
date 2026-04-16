@@ -30,6 +30,21 @@ describe('DomainOpsDomain.getPendingTransfers', () => {
     await domainOps.getPendingTransfers();
     expect(server.lastRequest()?.params.get('action')).toBe('GetClientsDomains');
   });
+
+  it('returns empty array when no domains have Pending Transfer status', async () => {
+    server.setFixture('GetClientsDomains', {
+      result: 'success', totalresults: 1,
+      domains: {
+        domain: [
+          { id: 301, userid: 42, domainname: 'example.test', regdate: '2025-01-15', expirydate: '2026-01-15', nextduedate: '2026-01-15', registrar: 'enom', status: 'Active' },
+        ],
+      },
+    });
+    const transfers = await domainOps.getPendingTransfers();
+    expect(transfers).toHaveLength(0);
+    // Restore
+    server.setFixture('GetClientsDomains', domainsFixture);
+  });
 });
 
 describe('DomainOpsDomain.getUpcomingRenewals', () => {
@@ -44,6 +59,11 @@ describe('DomainOpsDomain.getUpcomingRenewals', () => {
     const renewals = await domainOps.getUpcomingRenewals(1);
     const names = renewals.map((d) => d.domainname);
     expect(names).not.toContain('expiring.test');
+  });
+
+  it('returns nothing with daysAhead=0 (zero-width window)', async () => {
+    const renewals = await domainOps.getUpcomingRenewals(0);
+    expect(renewals).toHaveLength(0);
   });
 });
 
@@ -68,5 +88,14 @@ describe('DomainOpsDomain.getDomainDetails', () => {
     await domainOps.getDomainDetails(301);
     expect(server.lastRequest()?.params.get('action')).toBe('GetClientsDomains');
     expect(server.lastRequest()?.params.get('domainid')).toBe('301');
+  });
+
+  it('returns full domain record with all fields', async () => {
+    const domain = await domainOps.getDomainDetails(301);
+    expect(domain.userid).toBe(42);
+    expect(domain.regdate).toBe('2025-01-15');
+    expect(domain.expirydate).toBe('2026-01-15');
+    expect(domain.nextduedate).toBe('2026-01-15');
+    expect(domain.status).toBe('Active');
   });
 });

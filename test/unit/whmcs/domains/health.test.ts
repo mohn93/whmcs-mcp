@@ -54,6 +54,35 @@ describe('HealthDomain.getHealthSummary', () => {
     expect(summary.stats.income_today).toBe('1250.00');
     expect(summary.servers.total).toBe(2);
   });
+
+  it('reports zero hot servers when all servers are under 90%', async () => {
+    server.setFixture('GetServers', {
+      result: 'success',
+      servers: [
+        {
+          id: 3, name: 'cool-node', hostname: 'cool.local', ipaddress: '10.0.0.3',
+          noofservices: 10, maxallowedservices: 200, percentused: 5,
+          activestatus: true, module: 'cpanel',
+        },
+      ],
+    });
+    const summary = await health.getHealthSummary({ hasModuleQueue: true });
+    expect(summary.servers.total).toBe(1);
+    expect(summary.servers.hotCount).toBe(0);
+    expect(summary.servers.hotServers).toEqual([]);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
+  });
+
+  it('reports zero servers when servers list is empty', async () => {
+    server.setFixture('GetServers', { result: 'success', servers: [] });
+    const summary = await health.getHealthSummary({ hasModuleQueue: true });
+    expect(summary.servers.total).toBe(0);
+    expect(summary.servers.hotCount).toBe(0);
+    expect(summary.servers.hotServers).toEqual([]);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
+  });
 });
 
 describe('HealthDomain.findInconsistencies', () => {
@@ -79,5 +108,50 @@ describe('HealthDomain.findInconsistencies', () => {
     expect(result.staleServices[0].clientid).toBe(42);
     expect(result.staleServices[0].name).toBe('Business Hosting');
     expect(result.staleServices[0].status).toBe('Pending');
+  });
+
+  it('returns empty overdueInvoices when no invoices are overdue > 90 days', async () => {
+    server.setFixture('GetInvoices', {
+      result: 'success',
+      invoices: {
+        invoice: [
+          { id: 7001, userid: 42, total: '50.00', duedate: '2026-04-10', status: 'Unpaid' },
+        ],
+      },
+    });
+    const result = await health.findInconsistencies();
+    expect(result.overdueInvoices).toHaveLength(0);
+    // Restore
+    server.setFixture('GetInvoices', invoicesFixture);
+  });
+
+  it('returns empty staleServices when no services are stale', async () => {
+    server.setFixture('GetClientsProducts', {
+      result: 'success',
+      products: {
+        product: [
+          { id: 3002, clientid: 42, name: 'Fresh Service', status: 'Active', regdate: '2026-04-14' },
+        ],
+      },
+    });
+    const result = await health.findInconsistencies();
+    expect(result.staleServices).toHaveLength(0);
+    // Restore
+    server.setFixture('GetClientsProducts', productsFixture);
+  });
+
+  it('returns empty arrays when both invoices and services are empty', async () => {
+    server.setFixture('GetInvoices', {
+      result: 'success', invoices: { invoice: [] },
+    });
+    server.setFixture('GetClientsProducts', {
+      result: 'success', products: { product: [] },
+    });
+    const result = await health.findInconsistencies();
+    expect(result.overdueInvoices).toHaveLength(0);
+    expect(result.staleServices).toHaveLength(0);
+    // Restore
+    server.setFixture('GetInvoices', invoicesFixture);
+    server.setFixture('GetClientsProducts', productsFixture);
   });
 });

@@ -67,4 +67,24 @@ describe('registerDomainOpsTools', () => {
     // Restore fixture
     server.setFixture('GetClientsDomains', domainsFixture);
   });
+
+  it('whmcs_get_upcoming_renewals returns domains within window', async () => {
+    const { mcp, handlers } = makeServer();
+    registerDomainOpsTools(mcp as never, { domainOps });
+    const out = await handlers['whmcs_get_upcoming_renewals']({ daysAhead: 365 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('whmcs_get_domain_details returns full domain data', async () => {
+    const { mcp, handlers } = makeServer();
+    registerDomainOpsTools(mcp as never, { domainOps });
+    const out = await handlers['whmcs_get_domain_details']({ domainId: 301 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.id).toBe(301);
+    expect(parsed.domainname).toBe('example.test');
+    expect(parsed.registrar).toBe('enom');
+  });
 });

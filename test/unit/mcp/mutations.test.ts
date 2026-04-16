@@ -39,4 +39,27 @@ describe('mutation gating', () => {
     process.env.WHMCS_ALLOW_MUTATIONS = 'true';
     expect(() => requireMutations('whmcs_resync_service', true)).not.toThrow();
   });
+
+  it('error message includes the tool name when mutations are disabled', () => {
+    expect(() => requireMutations('whmcs_apply_credit')).toThrow(/whmcs_apply_credit/);
+  });
+
+  it('error message includes the tool name when confirm is not true', () => {
+    process.env.WHMCS_ALLOW_MUTATIONS = 'true';
+    expect(() => requireMutations('whmcs_send_email', false)).toThrow(/whmcs_send_email/);
+  });
+
+  it('confirm = undefined is treated same as false (requires confirmation)', () => {
+    process.env.WHMCS_ALLOW_MUTATIONS = 'true';
+    expect(() => requireMutations('whmcs_update_ticket', undefined)).toThrow(/confirm: true/);
+  });
+
+  it('confirm = undefined when mutations disabled throws about WHMCS_ALLOW_MUTATIONS', () => {
+    expect(() => requireMutations('whmcs_resync_service', undefined)).toThrow(/WHMCS_ALLOW_MUTATIONS/);
+  });
+
+  it('is disabled when env var is empty string', () => {
+    process.env.WHMCS_ALLOW_MUTATIONS = '';
+    expect(mutationsEnabled()).toBe(false);
+  });
 });

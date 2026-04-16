@@ -42,6 +42,13 @@ describe('ActionDomain.applyCreditToInvoice', () => {
     const last = server.lastRequest()!;
     expect(last.params.get('noemail')).toBe('false');
   });
+
+  it('sends the correct amount param', async () => {
+    await actions.applyCreditToInvoice(5001, 99.99);
+    const last = server.lastRequest()!;
+    expect(last.params.get('amount')).toBe('99.99');
+    expect(last.params.get('invoiceid')).toBe('5001');
+  });
 });
 
 describe('ActionDomain.sendEmail', () => {
@@ -57,6 +64,13 @@ describe('ActionDomain.sendEmail', () => {
     expect(last.params.get('id')).toBe('200');
     expect(last.params.get('messagename')).toBe('Invoice Payment Reminder');
     expect(last.params.get('customvars')).toBe('abc123');
+  });
+
+  it('sends messagename param correctly', async () => {
+    await actions.sendEmail({ id: 100, messagename: 'General Email Template' });
+    const last = server.lastRequest()!;
+    expect(last.params.get('messagename')).toBe('General Email Template');
+    expect(last.params.get('customvars')).toBeNull(); // not sent when not provided
   });
 });
 
@@ -79,5 +93,13 @@ describe('ActionDomain.updateTicketStatus', () => {
     await actions.updateTicketStatus(8001, 'Open');
     const last = server.lastRequest()!;
     expect(last.params.get('message')).toBeNull();
+  });
+
+  it('sends optional message when provided', async () => {
+    await actions.updateTicketStatus(8001, 'On Hold', 'Waiting for customer response');
+    const last = server.lastRequest()!;
+    expect(last.params.get('message')).toBe('Waiting for customer response');
+    expect(last.params.get('status')).toBe('On Hold');
+    expect(last.params.get('ticketid')).toBe('8001');
   });
 });

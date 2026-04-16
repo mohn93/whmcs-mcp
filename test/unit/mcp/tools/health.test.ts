@@ -91,4 +91,16 @@ describe('registerHealthTools', () => {
     expect(parsed.staleServices).toHaveLength(1);
     expect(parsed.staleServices[0].id).toBe(3001);
   });
+
+  it('whmcs_get_health_summary handles unsupported ModuleQueue gracefully', async () => {
+    register({ hasModuleQueue: false });
+    const handler = registrations['whmcs_get_health_summary'];
+    const result = await handler({});
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.moduleQueue.supported).toBe(false);
+    expect(parsed.moduleQueue.reason).toMatch(/WHMCS.*8/);
+    // Stats should still be returned
+    expect(parsed.stats.income_today).toBe('1250.00');
+  });
 });

@@ -50,6 +50,28 @@ describe('ProvisioningDomain.getServiceDetails', () => {
     // Restore original fixture for other tests
     server.setFixture('GetClientsProducts', productFixture);
   });
+
+  it('returns undefined server when serverid is 0 (no server assigned)', async () => {
+    server.setFixture('GetClientsProducts', {
+      result: 'success',
+      totalresults: 1,
+      products: {
+        product: [{
+          id: 1001, clientid: 42, orderid: 2001, pid: 5,
+          name: 'Starter Hosting', groupname: 'Web Hosting',
+          domain: 'example.test', status: 'Pending',
+          regdate: '2025-01-15', nextduedate: '2026-01-15',
+          billingcycle: 'Monthly', recurringamount: '10.00',
+          paymentmethod: 'stripe', username: 'expl1234',
+          serverid: 0, servername: '', serverhostname: '', serverip: '',
+        }],
+      },
+    });
+    const svc = await prov.getServiceDetails(1001);
+    expect(svc.server).toBeUndefined();
+    // Restore
+    server.setFixture('GetClientsProducts', productFixture);
+  });
 });
 
 describe('ProvisioningDomain.getModuleLog', () => {
@@ -70,6 +92,17 @@ describe('ProvisioningDomain.getModuleLog', () => {
   it('honors the limit parameter', async () => {
     await prov.getModuleLog(1001, { limit: 5 });
     expect(server.lastRequest()?.params.get('limitnum')).toBe('5');
+  });
+
+  it('returns empty array when activity log has no entries', async () => {
+    server.setFixture('GetActivityLog', {
+      result: 'success', totalresults: 0, activity: { entry: [] },
+    });
+    const log = await prov.getModuleLog(1001);
+    expect(log).toHaveLength(0);
+    expect(log).toEqual([]);
+    // Restore
+    server.setFixture('GetActivityLog', activityFixture);
   });
 });
 
@@ -93,6 +126,21 @@ describe('ProvisioningDomain.getModuleQueue', () => {
       expect(q.reason).toMatch(/WHMCS.*8/);
     }
   });
+
+  it('returns empty items when module queue is supported but empty', async () => {
+    server.setFixture('ModuleQueue', {
+      result: 'success', totalresults: 0, queue: { item: [] },
+    });
+    const caps = { hasModuleQueue: true } as const;
+    const q = await prov.getModuleQueue(caps);
+    expect(q.supported).toBe(true);
+    if (q.supported) {
+      expect(q.items).toHaveLength(0);
+      expect(q.items).toEqual([]);
+    }
+    // Restore
+    server.setFixture('ModuleQueue', moduleQueueFixture);
+  });
 });
 
 describe('ProvisioningDomain.getServerUsage', () => {
@@ -113,6 +161,15 @@ describe('ProvisioningDomain.getServerUsage', () => {
     expect(hot).toHaveLength(1);
     expect(hot[0].name).toBe('node-02');
   });
+
+  it('returns empty array when no servers exist', async () => {
+    server.setFixture('GetServers', { result: 'success', servers: [] });
+    const u = await prov.getServerUsage();
+    expect(u).toHaveLength(0);
+    expect(u).toEqual([]);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
+  });
 });
 
 describe('ProvisioningDomain.resyncService', () => {
@@ -132,5 +189,25 @@ describe('ProvisioningDomain.resyncService', () => {
 
   it('rejects unsupported actions', async () => {
     await expect(prov.resyncService(1001, 'DropTables' as never)).rejects.toThrow(/unsupported/i);
+  });
+
+  it('issues a Suspend call when action is Suspend', async () => {
+    const r = await prov.resyncService(1001, 'Suspend');
+    expect(r.message).toMatch(/successfully/i);
+    const last = server.lastRequest()!;
+    expect(last.params.get('func_name')).toBe('Suspend');
+    expect(last.params.get('serviceid')).toBe('1001');
+  });
+
+  it('issues an Unsuspend call when action is Unsuspend', async () => {
+    const r = await prov.resyncService(1001, 'Unsuspend');
+    expect(r.message).toMatch(/successfully/i);
+    expect(server.lastRequest()!.params.get('func_name')).toBe('Unsuspend');
+  });
+
+  it('issues a Terminate call when action is Terminate', async () => {
+    const r = await prov.resyncService(1001, 'Terminate');
+    expect(r.message).toMatch(/successfully/i);
+    expect(server.lastRequest()!.params.get('func_name')).toBe('Terminate');
   });
 });

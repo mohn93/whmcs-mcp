@@ -20,4 +20,20 @@ describe('SystemDomain.getStats', () => {
     expect(stats.income_today).toBe('0.00');
     expect(stats.orders_pending_count).toBe(0);
   });
+
+  it('returns all expected fields', async () => {
+    const stats = await system.getStats();
+    expect(stats).toHaveProperty('income_today');
+    expect(stats).toHaveProperty('income_thismonth');
+    expect(stats).toHaveProperty('income_thisyear');
+    expect(stats).toHaveProperty('income_alltime');
+    expect(stats).toHaveProperty('orders_pending_count');
+    expect(stats).toHaveProperty('tickets_awaitingreply_count');
+    expect(stats).toHaveProperty('invoices_unpaid_count');
+  });
+
+  it('calls GetStats action on WHMCS API', async () => {
+    await system.getStats();
+    expect(server.lastRequest()?.params.get('action')).toBe('GetStats');
+  });
 });

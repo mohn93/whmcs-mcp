@@ -127,4 +127,35 @@ describe('registerProvisioningTools', () => {
     expect(parsed.supported).toBe(false);
     expect(parsed.reason).toMatch(/WHMCS.*8/);
   });
+
+  it('whmcs_get_module_log returns activity entries', async () => {
+    register();
+    const handler = registrations['whmcs_get_module_log'];
+    const result = await handler({ serviceId: 1001 });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].description).toMatch(/Module Create/);
+  });
+
+  it('whmcs_get_module_queue returns entries when supported', async () => {
+    register({ hasModuleQueue: true });
+    const handler = registrations['whmcs_get_module_queue'];
+    const result = await handler({});
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.supported).toBe(true);
+    expect(parsed.items).toHaveLength(1);
+  });
+
+  it('whmcs_get_server_usage returns server utilization data', async () => {
+    register();
+    const handler = registrations['whmcs_get_server_usage'];
+    const result = await handler({});
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].name).toBe('node-01');
+    expect(parsed[1].percentUsed).toBe(97);
+  });
 });

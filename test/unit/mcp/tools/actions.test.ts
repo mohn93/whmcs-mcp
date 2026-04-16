@@ -120,4 +120,41 @@ describe('registerActionTools', () => {
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.message).toMatch(/Invoice Payment Reminder/);
   });
+
+  it('whmcs_resend_welcome_email is BLOCKED without confirm=true', async () => {
+    process.env.WHMCS_ALLOW_MUTATIONS = 'true';
+    register();
+    const handler = registrations['whmcs_resend_welcome_email'];
+    const result = await handler({ serviceId: 100 });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/confirm: true/);
+  });
+
+  it('whmcs_send_invoice_reminder is BLOCKED without WHMCS_ALLOW_MUTATIONS', async () => {
+    delete process.env.WHMCS_ALLOW_MUTATIONS;
+    register();
+    const handler = registrations['whmcs_send_invoice_reminder'];
+    const result = await handler({ invoiceId: 200, confirm: true });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/WHMCS_ALLOW_MUTATIONS/);
+  });
+
+  it('whmcs_update_ticket_status is BLOCKED without WHMCS_ALLOW_MUTATIONS', async () => {
+    delete process.env.WHMCS_ALLOW_MUTATIONS;
+    register();
+    const handler = registrations['whmcs_update_ticket_status'];
+    const result = await handler({ ticketId: 8001, status: 'Closed', confirm: true });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/WHMCS_ALLOW_MUTATIONS/);
+  });
+
+  it('whmcs_update_ticket_status passes optional message to domain', async () => {
+    process.env.WHMCS_ALLOW_MUTATIONS = 'true';
+    register();
+    const handler = registrations['whmcs_update_ticket_status'];
+    const result = await handler({ ticketId: 8001, status: 'In Progress', message: 'Looking into it', confirm: true });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.message).toMatch(/Ticket #8001 status updated to In Progress/);
+  });
 });

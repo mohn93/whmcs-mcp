@@ -48,4 +48,86 @@ describe('probeCapabilities', () => {
     expect(caps.hasCreateSsoToken).toBe(false);
     expect(caps.hasGetCredits).toBe(false);
   });
+
+  it('WHMCS 7.0 — below all thresholds: no ModuleQueue, no SSO, no Credits', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: '7.0.0', canonicalversion: '7.0.0-release.1' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.version).toBe('7.0.0');
+    expect(caps.major).toBe(7);
+    expect(caps.minor).toBe(0);
+    expect(caps.hasModuleQueue).toBe(false);
+    expect(caps.hasCreateSsoToken).toBe(false);
+    expect(caps.hasGetCredits).toBe(false);
+  });
+
+  it('WHMCS 7.6 — has Credits (>=7.1) but not SSO (requires >=7.7)', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: '7.6.0', canonicalversion: '7.6.0-release.1' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.version).toBe('7.6.0');
+    expect(caps.major).toBe(7);
+    expect(caps.minor).toBe(6);
+    expect(caps.hasModuleQueue).toBe(false);
+    expect(caps.hasCreateSsoToken).toBe(false);
+    expect(caps.hasGetCredits).toBe(true);
+  });
+
+  it('malformed version string (e.g. "abc") falls back to zero capabilities', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: 'abc' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.version).toBe('abc');
+    expect(caps.major).toBe(0);
+    expect(caps.minor).toBe(0);
+    expect(caps.hasModuleQueue).toBe(false);
+    expect(caps.hasCreateSsoToken).toBe(false);
+    expect(caps.hasGetCredits).toBe(false);
+  });
+
+  it('version "8.0.0" boundary — ModuleQueue = true, SSO = true, Credits = true', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: '8.0.0', canonicalversion: '8.0.0-release.1' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.version).toBe('8.0.0');
+    expect(caps.major).toBe(8);
+    expect(caps.minor).toBe(0);
+    expect(caps.hasModuleQueue).toBe(true);
+    expect(caps.hasCreateSsoToken).toBe(true);
+    expect(caps.hasGetCredits).toBe(true);
+  });
+
+  it('WHMCS 7.7 boundary — SSO = true, Credits = true, ModuleQueue = false', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: '7.7.0', canonicalversion: '7.7.0-release.1' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.major).toBe(7);
+    expect(caps.minor).toBe(7);
+    expect(caps.hasModuleQueue).toBe(false);
+    expect(caps.hasCreateSsoToken).toBe(true);
+    expect(caps.hasGetCredits).toBe(true);
+  });
+
+  it('WHMCS 7.1 boundary — Credits = true, SSO = false', async () => {
+    server.setFixture('WhmcsDetails', {
+      result: 'success',
+      whmcs: { version: '7.1.0', canonicalversion: '7.1.0-release.1' },
+    });
+    const caps = await probeCapabilities(clientFor(server));
+    expect(caps.major).toBe(7);
+    expect(caps.minor).toBe(1);
+    expect(caps.hasGetCredits).toBe(true);
+    expect(caps.hasCreateSsoToken).toBe(false);
+    expect(caps.hasModuleQueue).toBe(false);
+  });
 });

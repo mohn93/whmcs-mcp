@@ -68,4 +68,30 @@ describe('registerTimelineTools', () => {
     const out = await handlers['whmcs_get_client_autoauth_url']({ clientId: 42 });
     expect(out.content[0].text).toMatch(/7\.7/);
   });
+
+  it('whmcs_get_client_autoauth_url returns token when supported', async () => {
+    const { mcp, handlers } = makeServer();
+    registerTimelineTools(mcp as never, { timeline: tl, capabilities: { hasCreateSsoToken: true } as never });
+    const out = await handlers['whmcs_get_client_autoauth_url']({ clientId: 42 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.supported).toBe(true);
+    expect(parsed.accessToken).toBe('sso_token_abc123');
+    expect(parsed.redirectUrl).toContain('userid=42');
+  });
+
+  it('whmcs_get_client_timeline includes all event types in output', async () => {
+    const { mcp, handlers } = makeServer();
+    registerTimelineTools(mcp as never, { timeline: tl, capabilities: { hasCreateSsoToken: true } as never });
+    const out = await handlers['whmcs_get_client_timeline']({ clientId: 42 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.clientId).toBe(42);
+    const types = new Set(parsed.events.map((e: any) => e.type));
+    expect(types).toContain('order');
+    expect(types).toContain('invoice');
+    expect(types).toContain('service');
+    expect(types).toContain('ticket');
+    expect(types).toContain('domain');
+  });
 });

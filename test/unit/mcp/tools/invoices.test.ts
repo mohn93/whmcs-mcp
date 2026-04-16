@@ -73,4 +73,47 @@ describe('registerInvoiceTools', () => {
     const out = await handlers['whmcs_get_credit_history']({ clientId: 42 });
     expect(out.content[0].text).toMatch(/7\.1/);
   });
+
+  it('whmcs_get_payment_attempts returns transaction data', async () => {
+    const { mcp, handlers } = makeServer();
+    registerInvoiceTools(mcp as never, { invoices: inv, capabilities: { hasGetCredits: true } as never });
+    const out = await handlers['whmcs_get_payment_attempts']({ invoiceId: 5001 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.invoiceid).toBe(5001);
+    expect(parsed.transactions).toHaveLength(2);
+  });
+
+  it('whmcs_get_orphan_transactions returns orphan data', async () => {
+    server.setFixture('GetTransactions', txOrphanFixture);
+    const { mcp, handlers } = makeServer();
+    registerInvoiceTools(mcp as never, { invoices: inv, capabilities: { hasGetCredits: true } as never });
+    const out = await handlers['whmcs_get_orphan_transactions']({});
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].transid).toBe('PP-orphan-789');
+    server.setFixture('GetTransactions', txInvoiceFixture);
+  });
+
+  it('whmcs_get_dunning_log returns activity entries', async () => {
+    const { mcp, handlers } = makeServer();
+    registerInvoiceTools(mcp as never, { invoices: inv, capabilities: { hasGetCredits: true } as never });
+    const out = await handlers['whmcs_get_dunning_log']({ invoiceId: 5001 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed).toHaveLength(3);
+    expect(parsed[0].description).toMatch(/Payment Attempt Failed/);
+  });
+
+  it('whmcs_get_credit_history returns credits when supported', async () => {
+    server.setFixture('GetCredits', creditsFixture);
+    const { mcp, handlers } = makeServer();
+    registerInvoiceTools(mcp as never, { invoices: inv, capabilities: { hasGetCredits: true } as never });
+    const out = await handlers['whmcs_get_credit_history']({ clientId: 42 });
+    expect(out.isError).toBeUndefined();
+    const parsed = JSON.parse(out.content[0].text);
+    expect(parsed.supported).toBe(true);
+    expect(parsed.credits).toHaveLength(2);
+  });
 });

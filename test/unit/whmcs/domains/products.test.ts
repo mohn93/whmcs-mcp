@@ -47,6 +47,20 @@ describe('ProductDomain.getProductFull', () => {
     // Restore original fixture
     server.setFixture('GetProducts', productsFixture);
   });
+
+  it('returns pricing with all cycle fields', async () => {
+    const p = await products.getProductFull(5);
+    const usd = p.pricing.USD;
+    expect(usd.monthly).toBe('10.00');
+    expect(usd.quarterly).toBe('27.00');
+    expect(usd.semiannually).toBe('50.00');
+    expect(usd.annually).toBe('96.00');
+    expect(usd.biennially).toBe('180.00');
+    expect(usd.triennially).toBe('252.00');
+    expect(usd.prefix).toBe('$');
+    expect(usd.msetupfee).toBe('5.00');
+    expect(usd.asetupfee).toBe('0.00');
+  });
 });
 
 describe('ProductDomain.getProductGroups', () => {
@@ -61,6 +75,17 @@ describe('ProductDomain.getProductGroups', () => {
   it('calls GetProductGroups action', async () => {
     await products.getProductGroups();
     expect(server.lastRequest()?.params.get('action')).toBe('GetProductGroups');
+  });
+
+  it('returns empty array when no product groups exist', async () => {
+    server.setFixture('GetProductGroups', {
+      result: 'success', productgroups: { productgroup: [] },
+    });
+    const groups = await products.getProductGroups();
+    expect(groups).toHaveLength(0);
+    expect(groups).toEqual([]);
+    // Restore
+    server.setFixture('GetProductGroups', groupsFixture);
   });
 });
 
@@ -82,5 +107,16 @@ describe('ProductDomain.getClientAddons', () => {
     await products.getClientAddons(42);
     expect(server.lastRequest()?.params.get('action')).toBe('GetClientsProducts');
     expect(server.lastRequest()?.params.get('clientid')).toBe('42');
+  });
+
+  it('returns empty array when client has no products', async () => {
+    server.setFixture('GetClientsProducts', {
+      result: 'success', totalresults: 0, products: { product: [] },
+    });
+    const addons = await products.getClientAddons(42);
+    expect(addons).toHaveLength(0);
+    expect(addons).toEqual([]);
+    // Restore
+    server.setFixture('GetClientsProducts', clientProductsFixture);
   });
 });
