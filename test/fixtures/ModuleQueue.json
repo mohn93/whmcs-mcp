@@ -1,0 +1,18 @@
+{
+  "result": "success",
+  "totalresults": 1,
+  "queue": {
+    "item": [
+      {
+        "id": 77,
+        "service_type": "Hosting",
+        "service_id": 1001,
+        "module": "cpanel",
+        "action": "Create",
+        "related_id": 2001,
+        "last_attempt": "2025-01-15 10:02:03",
+        "last_attempt_error": "Account creation failed: domain already exists"
+      }
+    ]
+  }
+}

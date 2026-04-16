@@ -1,0 +1,30 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "servers": [
+    {
+      "id": 3,
+      "name": "node-01",
+      "hostname": "node-01.hosting.local",
+      "ipaddress": "10.0.0.3",
+      "monthlycost": "120.00",
+      "noofservices": 85,
+      "maxallowedservices": 200,
+      "percentused": 42,
+      "activestatus": true,
+      "module": "cpanel"
+    },
+    {
+      "id": 4,
+      "name": "node-02",
+      "hostname": "node-02.hosting.local",
+      "ipaddress": "10.0.0.4",
+      "monthlycost": "120.00",
+      "noofservices": 195,
+      "maxallowedservices": 200,
+      "percentused": 97,
+      "activestatus": true,
+      "module": "cpanel"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "result": "success",
+  "clientid": 42,
+  "totalresults": 1,
+  "products": {
+    "product": [
+      {
+        "id": 1001,
+        "clientid": 42,
+        "orderid": 2001,
+        "pid": 5,
+        "regdate": "2025-01-15",
+        "name": "Starter Hosting",
+        "groupname": "Web Hosting",
+        "domain": "example.test",
+        "dedicatedip": "",
+        "serverid": 3,
+        "servername": "node-01",
+        "serverip": "10.0.0.3",
+        "serverhostname": "node-01.hosting.local",
+        "status": "Pending",
+        "nextduedate": "2026-01-15",
+        "paymentmethod": "stripe",
+        "firstpaymentamount": "10.00",
+        "recurringamount": "10.00",
+        "billingcycle": "Monthly",
+        "customfields": { "customfield": [] },
+        "configoptions": { "configoption": [] },
+        "username": "expl1234",
+        "password": "REDACTED",
+        "notes": ""
+      }
+    ]
+  }
+}
