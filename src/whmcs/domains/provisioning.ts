@@ -32,7 +32,13 @@ interface RawProduct {
   username: string;
 }
 
+type ModuleAction = 'Create' | 'Suspend' | 'Unsuspend' | 'Terminate' | 'ChangePackage' | 'ChangePassword';
+
 export class ProvisioningDomain {
+  private static readonly SUPPORTED_ACTIONS: ReadonlySet<string> = new Set([
+    'Create', 'Suspend', 'Unsuspend', 'Terminate', 'ChangePackage', 'ChangePassword',
+  ]);
+
   constructor(private client: WhmcsClient) {}
 
   async getModuleLog(
@@ -142,5 +148,19 @@ export class ProvisioningDomain {
       percentUsed: s.percentused,
       headroom: Math.max(0, s.maxallowedservices - s.noofservices),
     }));
+  }
+
+  async resyncService(
+    serviceId: number,
+    action: ModuleAction = 'Create',
+  ): Promise<{ message: string }> {
+    if (!ProvisioningDomain.SUPPORTED_ACTIONS.has(action)) {
+      throw new Error(`Unsupported module action: ${action}`);
+    }
+    const res = await this.client.call<{ message: string }>('ModuleCustom', {
+      serviceid: serviceId,
+      func_name: action,
+    });
+    return { message: res.message ?? 'OK' };
   }
 }

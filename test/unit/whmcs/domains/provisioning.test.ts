@@ -114,3 +114,23 @@ describe('ProvisioningDomain.getServerUsage', () => {
     expect(hot[0].name).toBe('node-02');
   });
 });
+
+describe('ProvisioningDomain.resyncService', () => {
+  it('issues a ModuleCreate call for the given service', async () => {
+    const r = await prov.resyncService(1001, 'Create');
+    expect(r.message).toMatch(/successfully/i);
+    const last = server.lastRequest()!;
+    expect(last.params.get('action')).toBe('ModuleCustom');
+    expect(last.params.get('serviceid')).toBe('1001');
+    expect(last.params.get('func_name')).toBe('Create');
+  });
+
+  it('defaults to Create when no action is provided', async () => {
+    await prov.resyncService(1001);
+    expect(server.lastRequest()!.params.get('func_name')).toBe('Create');
+  });
+
+  it('rejects unsupported actions', async () => {
+    await expect(prov.resyncService(1001, 'DropTables' as never)).rejects.toThrow(/unsupported/i);
+  });
+});
