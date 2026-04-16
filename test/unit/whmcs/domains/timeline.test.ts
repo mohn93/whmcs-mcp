@@ -67,3 +67,21 @@ describe('TimelineDomain.getClientTimeline', () => {
     expect(invoice.summary).toContain('Unpaid');
   });
 });
+
+describe('TimelineDomain.getClientAutoAuthUrl', () => {
+  it('returns SSO URL when capability is present', async () => {
+    const result = await timeline.getClientAutoAuthUrl(42, { hasCreateSsoToken: true });
+    expect(result.supported).toBe(true);
+    if (result.supported) {
+      expect(result.redirectUrl).toContain('userid=42');
+    }
+  });
+
+  it('reports unsupported when capability is missing', async () => {
+    const result = await timeline.getClientAutoAuthUrl(42, { hasCreateSsoToken: false });
+    expect(result.supported).toBe(false);
+    if (!result.supported) {
+      expect(result.reason).toMatch(/7\.7/);
+    }
+  });
+});

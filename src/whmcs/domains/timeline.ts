@@ -108,4 +108,29 @@ export class TimelineDomain {
       }));
     } catch { return []; }
   }
+
+  async getClientAutoAuthUrl(
+    clientId: number,
+    caps: { hasCreateSsoToken: boolean },
+  ): Promise<
+    | { supported: true; redirectUrl: string; accessToken: string }
+    | { supported: false; reason: string }
+  > {
+    if (!caps.hasCreateSsoToken) {
+      return {
+        supported: false,
+        reason: 'CreateSsoToken API action requires WHMCS 7.7 or later.',
+      };
+    }
+    const res = await this.client.call<{
+      access_token: string;
+      redirect_url: string;
+    }>('CreateSsoToken', { client_id: clientId });
+
+    return {
+      supported: true,
+      redirectUrl: res.redirect_url,
+      accessToken: res.access_token,
+    };
+  }
 }
