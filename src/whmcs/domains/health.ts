@@ -15,6 +15,7 @@ export interface HealthSummary {
   moduleQueue:
     | { supported: boolean; pendingCount: number }
     | { supported: false; reason: string };
+  errors: string[];
 }
 
 export interface Inconsistencies {
@@ -31,7 +32,9 @@ export interface Inconsistencies {
     name: string;
     status: string;
     regdate: string;
+    daysStale: number;
   }>;
+  errors: string[];
 }
 
 export class HealthDomain {
@@ -40,45 +43,53 @@ export class HealthDomain {
   async getHealthSummary(caps: {
     hasModuleQueue: boolean;
   }): Promise<HealthSummary> {
-    // Fetch stats
-    const statsRes = await this.client.call<{
-      stats: {
-        income_today: string;
-        orders_pending_count: number;
-        tickets_awaitingreply_count: number;
-        invoices_unpaid_count: number;
-      };
-    }>('GetStats');
+    const errors: string[] = [];
 
-    const stats = {
-      income_today: statsRes.stats?.income_today ?? '0.00',
-      orders_pending: statsRes.stats?.orders_pending_count ?? 0,
-      invoices_overdue: statsRes.stats?.invoices_unpaid_count ?? 0,
-      tickets_awaiting: statsRes.stats?.tickets_awaitingreply_count ?? 0,
+    // Fetch stats
+    let stats = {
+      income_today: '0.00',
+      orders_pending: 0,
+      invoices_overdue: 0,
+      tickets_awaiting: 0,
     };
+    try {
+      const statsRes = await this.client.call<{
+        stats: {
+          income_today: string;
+          orders_pending_count: number;
+          tickets_awaitingreply_count: number;
+          invoices_unpaid_count: number;
+        };
+      }>('GetStats');
+      stats = {
+        income_today: statsRes.stats?.income_today ?? '0.00',
+        orders_pending: statsRes.stats?.orders_pending_count ?? 0,
+        invoices_overdue: statsRes.stats?.invoices_unpaid_count ?? 0,
+        tickets_awaiting: statsRes.stats?.tickets_awaitingreply_count ?? 0,
+      };
+    } catch (err) {
+      errors.push(`GetStats failed: ${(err as Error).message}`);
+    }
 
     // Fetch servers
-    const serversRes = await this.client.call<{
-      servers: Array<{
-        id: number;
-        name: string;
-        hostname: string;
-        ipaddress: string;
-        noofservices: number;
-        maxallowedservices: number;
-        percentused: number;
-        activestatus: boolean;
-        module: string;
-      }>;
-    }>('GetServers');
-
-    const allServers = serversRes.servers ?? [];
-    const hotServers = allServers.filter((s) => s.percentused >= 90);
-    const servers = {
-      total: allServers.length,
-      hotCount: hotServers.length,
-      hotServers: hotServers.map((s) => s.name),
-    };
+    let servers = { total: 0, hotCount: 0, hotServers: [] as string[] };
+    try {
+      const serversRes = await this.client.call<{
+        servers: Array<{
+          name: string;
+          percentused: number;
+        }>;
+      }>('GetServers');
+      const allServers = serversRes.servers ?? [];
+      const hotServers = allServers.filter((s) => s.percentused >= 90);
+      servers = {
+        total: allServers.length,
+        hotCount: hotServers.length,
+        hotServers: hotServers.map((s) => s.name),
+      };
+    } catch (err) {
+      errors.push(`GetServers failed: ${(err as Error).message}`);
+    }
 
     // Fetch module queue
     let moduleQueue: HealthSummary['moduleQueue'];
@@ -88,87 +99,148 @@ export class HealthDomain {
         reason: 'ModuleQueue API action requires WHMCS 8.0 or later.',
       };
     } else {
-      const queueRes = await this.client.call<{
-        queue: {
-          item: Array<{
-            id: number;
-            service_type: string;
-            service_id: number;
-            module: string;
-            action: string;
-          }>;
-        };
-      }>('ModuleQueue');
-      const items = queueRes.queue?.item ?? [];
-      moduleQueue = { supported: true, pendingCount: items.length };
+      try {
+        const queueRes = await this.client.call<{
+          queue: { item: Array<{ id: number }> };
+        }>('ModuleQueue');
+        const items = queueRes.queue?.item ?? [];
+        moduleQueue = { supported: true, pendingCount: items.length };
+      } catch (err) {
+        errors.push(`ModuleQueue failed: ${(err as Error).message}`);
+        moduleQueue = { supported: true, pendingCount: 0 };
+      }
     }
 
-    return { stats, servers, moduleQueue };
+    return { stats, servers, moduleQueue, errors };
   }
 
   async findInconsistencies(): Promise<Inconsistencies> {
-    // Fetch unpaid invoices
-    const invoicesRes = await this.client.call<{
-      invoices: {
-        invoice: Array<{
-          id: number;
-          userid: number;
-          total: string;
-          duedate: string;
-          status: string;
-        }>;
-      };
-    }>('GetInvoices', { status: 'Unpaid' });
-
+    const errors: string[] = [];
     const now = new Date();
-    const rawInvoices = invoicesRes.invoices?.invoice ?? [];
-    const overdueInvoices = rawInvoices
-      .map((inv) => {
-        const dueDate = new Date(inv.duedate);
-        const daysOverdue = Math.floor(
-          (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        return {
-          id: inv.id,
-          userid: inv.userid,
-          total: inv.total,
-          duedate: inv.duedate,
-          daysOverdue,
+
+    // Fetch unpaid invoices — use WHMCS's "Overdue" status which filters correctly
+    // (accounts for client status, grace periods, etc.)
+    let overdueInvoices: Inconsistencies['overdueInvoices'] = [];
+    try {
+      const invoicesRes = await this.client.call<{
+        invoices: {
+          invoice: Array<{
+            id: number;
+            userid: number;
+            total: string;
+            duedate: string;
+            status: string;
+          }>;
         };
-      })
-      .filter((inv) => inv.daysOverdue > 90);
+      }>('GetInvoices', { status: 'Overdue', limitnum: 250 });
+
+      overdueInvoices = (invoicesRes.invoices?.invoice ?? [])
+        .map((inv) => {
+          const dueDate = new Date(inv.duedate);
+          const daysOverdue = Math.floor(
+            (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          return {
+            id: inv.id,
+            userid: inv.userid,
+            total: inv.total,
+            duedate: inv.duedate,
+            daysOverdue,
+          };
+        })
+        .filter((inv) => inv.daysOverdue > 90)
+        .sort((a, b) => b.daysOverdue - a.daysOverdue)
+        .slice(0, 50);
+    } catch (err) {
+      errors.push(`GetInvoices (Overdue) failed: ${(err as Error).message}`);
+
+      // Fallback: try "Unpaid" status with date filter
+      try {
+        const fallbackRes = await this.client.call<{
+          invoices: {
+            invoice: Array<{
+              id: number;
+              userid: number;
+              total: string;
+              duedate: string;
+              status: string;
+            }>;
+          };
+        }>('GetInvoices', { status: 'Unpaid', limitnum: 250 });
+
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 90);
+
+        overdueInvoices = (fallbackRes.invoices?.invoice ?? [])
+          .filter((inv) => new Date(inv.duedate) < cutoff)
+          .map((inv) => {
+            const dueDate = new Date(inv.duedate);
+            const daysOverdue = Math.floor(
+              (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            return {
+              id: inv.id,
+              userid: inv.userid,
+              total: inv.total,
+              duedate: inv.duedate,
+              daysOverdue,
+            };
+          })
+          // Skip ancient invoices (> 2 years old) — likely abandoned accounts
+          .filter((inv) => inv.daysOverdue < 730)
+          .sort((a, b) => b.daysOverdue - a.daysOverdue)
+          .slice(0, 50);
+
+        errors.push('Fell back to Unpaid status with 90-730 day filter');
+      } catch (err2) {
+        errors.push(`GetInvoices (Unpaid fallback) also failed: ${(err2 as Error).message}`);
+      }
+    }
 
     // Fetch services in Pending status
-    const productsRes = await this.client.call<{
-      products: {
-        product: Array<{
-          id: number;
-          clientid: number;
-          name: string;
-          status: string;
-          regdate: string;
-        }>;
-      };
-    }>('GetClientsProducts');
+    let staleServices: Inconsistencies['staleServices'] = [];
+    try {
+      const productsRes = await this.client.call<{
+        products: {
+          product: Array<{
+            id: number;
+            clientid: number;
+            name: string;
+            status: string;
+            regdate: string;
+          }>;
+        };
+      }>('GetClientsProducts', { status: 'Pending' });
 
-    const rawProducts = productsRes.products?.product ?? [];
-    const staleServices = rawProducts
-      .filter((svc) => {
-        if (svc.status !== 'Pending') return false;
-        const regDate = new Date(svc.regdate);
-        const daysOld = Math.floor(
-          (now.getTime() - regDate.getTime()) / (1000 * 60 * 60 * 24),
-        );
-        return daysOld > 7;
-      })
-      .map((svc) => ({
-        id: svc.id,
-        clientid: svc.clientid,
-        name: svc.name,
-        status: svc.status,
-        regdate: svc.regdate,
-      }));
+      staleServices = (productsRes.products?.product ?? [])
+        .filter((svc) => {
+          if (svc.status !== 'Pending') return false;
+          const regDate = new Date(svc.regdate);
+          const daysOld = Math.floor(
+            (now.getTime() - regDate.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          return daysOld > 7;
+        })
+        .map((svc) => {
+          const regDate = new Date(svc.regdate);
+          const daysStale = Math.floor(
+            (now.getTime() - regDate.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          return {
+            id: svc.id,
+            clientid: svc.clientid,
+            name: svc.name,
+            status: svc.status,
+            regdate: svc.regdate,
+            daysStale,
+          };
+        })
+        .sort((a, b) => b.daysStale - a.daysStale)
+        .slice(0, 50);
+    } catch (err) {
+      errors.push(`GetClientsProducts (Pending) failed: ${(err as Error).message}`);
+    }
 
-    return { overdueInvoices, staleServices };
+    return { overdueInvoices, staleServices, errors };
   }
 }
