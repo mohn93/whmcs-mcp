@@ -35,6 +35,26 @@ interface RawProduct {
 export class ProvisioningDomain {
   constructor(private client: WhmcsClient) {}
 
+  async getModuleLog(
+    serviceId: number,
+    options: { limit?: number } = {},
+  ): Promise<Array<{ date: string; user: string; userid: number; description: string }>> {
+    const res = await this.client.call<{
+      activity: { entry: Array<{ date: string; user: string; userid: number; description: string }> };
+    }>('GetActivityLog', {
+      description: `Service ID ${serviceId}`,
+      limitnum: options.limit ?? 50,
+    });
+    const entries = res.activity?.entry ?? [];
+    return entries.filter(
+      (e) =>
+        new RegExp(
+          `\\b(Service ID ${serviceId}|Service #${serviceId}|service ${serviceId})\\b`,
+          'i',
+        ).test(e.description) || /Module /i.test(e.description),
+    );
+  }
+
   async getServiceDetails(serviceId: number): Promise<ServiceDetails> {
     const res = await this.client.call<{
       totalresults: number;

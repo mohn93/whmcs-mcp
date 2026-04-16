@@ -51,3 +51,24 @@ describe('ProvisioningDomain.getServiceDetails', () => {
     server.setFixture('GetClientsProducts', productFixture);
   });
 });
+
+describe('ProvisioningDomain.getModuleLog', () => {
+  it('returns only activity-log entries related to the given service ID', async () => {
+    const log = await prov.getModuleLog(1001);
+    expect(log).toHaveLength(2);
+    expect(log[0].description).toMatch(/Module Create Failed/);
+    expect(log[1].description).toMatch(/Module Create Command Initiated/);
+    expect(log.every((e) => /1001/.test(e.description))).toBe(true);
+  });
+
+  it('passes a narrowing description filter to the WHMCS API', async () => {
+    await prov.getModuleLog(1001);
+    expect(server.lastRequest()?.params.get('action')).toBe('GetActivityLog');
+    expect(server.lastRequest()?.params.get('description')).toContain('1001');
+  });
+
+  it('honors the limit parameter', async () => {
+    await prov.getModuleLog(1001, { limit: 5 });
+    expect(server.lastRequest()?.params.get('limitnum')).toBe('5');
+  });
+});
