@@ -1,0 +1,53 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { WhmcsClient } from '../../../../src/whmcs/client';
+import { ProvisioningDomain } from '../../../../src/whmcs/domains/provisioning';
+import { startMockWhmcs, type MockWhmcsServer } from '../../../mock-whmcs';
+import productFixture from '../../../fixtures/GetClientsProducts-service.json';
+import activityFixture from '../../../fixtures/GetActivityLog-service.json';
+import moduleQueueFixture from '../../../fixtures/ModuleQueue.json';
+import serversFixture from '../../../fixtures/GetServers-with-usage.json';
+import moduleCustomFixture from '../../../fixtures/ModuleCustom-createAccount.json';
+
+let server: MockWhmcsServer;
+let prov: ProvisioningDomain;
+
+beforeAll(async () => {
+  server = await startMockWhmcs({
+    fixtures: {
+      GetClientsProducts: productFixture,
+      GetActivityLog: activityFixture,
+      ModuleQueue: moduleQueueFixture,
+      GetServers: serversFixture,
+      ModuleCustom: moduleCustomFixture,
+    },
+  });
+  const client = new WhmcsClient({ apiUrl: server.url + '/', identifier: 'id', secret: 'sec' });
+  prov = new ProvisioningDomain(client);
+});
+afterAll(async () => { await server.stop(); });
+
+describe('ProvisioningDomain.getServiceDetails', () => {
+  it('returns enriched single-service record', async () => {
+    const svc = await prov.getServiceDetails(1001);
+    expect(svc.id).toBe(1001);
+    expect(svc.status).toBe('Pending');
+    expect(svc.domain).toBe('example.test');
+    expect(svc.server?.name).toBe('node-01');
+    expect(svc.nextduedate).toBe('2026-01-15');
+  });
+
+  it('sends serviceid filter to WHMCS', async () => {
+    await prov.getServiceDetails(1001);
+    expect(server.lastRequest()?.params.get('action')).toBe('GetClientsProducts');
+    expect(server.lastRequest()?.params.get('serviceid')).toBe('1001');
+  });
+
+  it('throws a useful error when service is not found', async () => {
+    server.setFixture('GetClientsProducts', {
+      result: 'success', totalresults: 0, products: { product: [] },
+    });
+    await expect(prov.getServiceDetails(9999)).rejects.toThrow(/Service 9999 not found/);
+    // Restore original fixture for other tests
+    server.setFixture('GetClientsProducts', productFixture);
+  });
+});
