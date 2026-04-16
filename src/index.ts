@@ -11,6 +11,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as z from 'zod';
 import { WhmcsApiClient, WhmcsConfig } from './whmcs-client.js';
+import { WhmcsClient as NewWhmcsClient } from './whmcs/client.js';
+import { SystemDomain } from './whmcs/domains/system.js';
+import { registerSystemTools } from './mcp/tools/system.js';
 
 // Environment variables for WHMCS connection
 const config: WhmcsConfig = {
@@ -41,6 +44,15 @@ const server = new McpServer({
     name: 'whmcs-mcp-server',
     version: '1.0.0',
 });
+
+// Wire up new modular tool registrations
+const newClient = new NewWhmcsClient({
+    apiUrl: process.env.WHMCS_API_URL!,
+    identifier: process.env.WHMCS_API_IDENTIFIER!,
+    secret: process.env.WHMCS_API_SECRET!,
+    accesskey: process.env.WHMCS_ACCESS_KEY || undefined,
+});
+registerSystemTools(server, { system: new SystemDomain(newClient) });
 
 // ========================================
 // CLIENT MANAGEMENT TOOLS
@@ -980,20 +992,7 @@ server.registerTool(
 // SYSTEM TOOLS
 // ========================================
 
-server.registerTool(
-    'whmcs_get_stats',
-    {
-        title: 'Get System Stats',
-        description: 'Get WHMCS system statistics including income and order counts',
-        inputSchema: {},
-    },
-    async () => {
-        const result = await whmcsClient.getStats();
-        return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-    }
-);
+// whmcs_get_stats is now registered via registerSystemTools() above
 
 server.registerTool(
     'whmcs_get_admin_users',
