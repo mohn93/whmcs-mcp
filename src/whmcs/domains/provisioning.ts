@@ -150,17 +150,24 @@ export class ProvisioningDomain {
     }));
   }
 
-  async getServicesByServer(serverId: number): Promise<Array<{
-    id: number; clientid: number; name: string; domain: string;
-    status: string; regdate: string; nextduedate: string;
-  }>> {
-    // Paginate to avoid WHMCS PHP memory exhaustion on large databases
-    const PAGE_SIZE = 100;
-    const MAX_PAGES = 10; // safety cap: 1000 services max
-    const allServices: Array<{
+  async getServicesByServer(serverId: number): Promise<{
+    serverId: number;
+    totalScanned: number;
+    services: Array<{
+      id: number; clientid: number; name: string; domain: string;
+      status: string; regdate: string; nextduedate: string;
+    }>;
+    statusCounts: Record<string, number>;
+  }> {
+    // WHMCS GetClientsProducts ignores the serverid filter param,
+    // so we must paginate through ALL services and filter client-side.
+    const PAGE_SIZE = 250;
+    const MAX_PAGES = 20; // safety cap: 5000 services
+    const matched: Array<{
       id: number; clientid: number; name: string; domain: string;
       status: string; regdate: string; nextduedate: string;
     }> = [];
+    let totalScanned = 0;
 
     for (let page = 0; page < MAX_PAGES; page++) {
       try {
@@ -172,24 +179,27 @@ export class ProvisioningDomain {
             serverid: number;
           }> };
         }>('GetClientsProducts', {
-          serverid: serverId,
           limitstart: page * PAGE_SIZE,
           limitnum: PAGE_SIZE,
         });
 
         const products = res.products?.product ?? [];
+        totalScanned += products.length;
+
         for (const p of products) {
-          allServices.push({
-            id: p.id, clientid: p.clientid, name: p.name, domain: p.domain,
-            status: p.status, regdate: p.regdate, nextduedate: p.nextduedate,
-          });
+          if (Number(p.serverid) === serverId) {
+            matched.push({
+              id: p.id, clientid: p.clientid, name: p.name, domain: p.domain,
+              status: p.status, regdate: p.regdate, nextduedate: p.nextduedate,
+            });
+          }
         }
 
-        // Stop if we got fewer than a full page (no more results)
+        // Stop if we got fewer than a full page
         if (products.length < PAGE_SIZE) break;
       } catch (err) {
-        // If even paginated requests fail, return what we have so far with an indicator
-        if (allServices.length > 0) break;
+        // If a page fails, return what we have so far
+        if (matched.length > 0 || totalScanned > 0) break;
         throw new Error(
           `Failed to fetch services for server ${serverId}: ${(err as Error).message}. ` +
           `This may be caused by WHMCS PHP memory limits — ask your sysadmin to increase memory_limit in php.ini.`
@@ -197,7 +207,13 @@ export class ProvisioningDomain {
       }
     }
 
-    return allServices;
+    // Compute status breakdown
+    const statusCounts: Record<string, number> = {};
+    for (const s of matched) {
+      statusCounts[s.status] = (statusCounts[s.status] ?? 0) + 1;
+    }
+
+    return { serverId, totalScanned, services: matched, statusCounts };
   }
 
   async getModuleDebugLog(options: {

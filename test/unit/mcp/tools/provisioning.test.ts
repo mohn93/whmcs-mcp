@@ -171,9 +171,10 @@ describe('registerProvisioningTools', () => {
     const result = await handler({ serverId: 3 });
     expect(result.isError).toBeUndefined();
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed).toHaveLength(2);
-    expect(parsed[0].domain).toBe('example.test');
-    expect(parsed[1].status).toBe('Suspended');
+    expect(parsed.services).toHaveLength(2);
+    expect(parsed.services[0].domain).toBe('example.test');
+    expect(parsed.services[1].status).toBe('Suspended');
+    expect(parsed.statusCounts).toBeDefined();
     // Restore
     whmcsServer.setFixture('GetClientsProducts', productFixture);
   });

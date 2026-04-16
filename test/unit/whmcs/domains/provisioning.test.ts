@@ -215,35 +215,38 @@ describe('ProvisioningDomain.resyncService', () => {
 });
 
 describe('ProvisioningDomain.getServicesByServer', () => {
-  it('returns services filtered by server', async () => {
+  it('returns services filtered by server (client-side)', async () => {
     server.setFixture('GetClientsProducts', byServerFixture);
-    const services = await prov.getServicesByServer(3);
-    expect(services).toHaveLength(2);
-    expect(services[0].id).toBe(1001);
-    expect(services[0].domain).toBe('example.test');
-    expect(services[0].status).toBe('Active');
-    expect(services[1].id).toBe(1003);
-    expect(services[1].status).toBe('Suspended');
+    const result = await prov.getServicesByServer(3);
+    expect(result.services).toHaveLength(2);
+    expect(result.services[0].id).toBe(1001);
+    expect(result.services[0].domain).toBe('example.test');
+    expect(result.services[0].status).toBe('Active');
+    expect(result.services[1].id).toBe(1003);
+    expect(result.services[1].status).toBe('Suspended');
+    expect(result.totalScanned).toBe(2);
+    expect(result.statusCounts).toEqual({ Active: 1, Suspended: 1 });
     // Restore
     server.setFixture('GetClientsProducts', productFixture);
   });
 
-  it('sends serverid param to WHMCS', async () => {
+  it('paginates without serverid param (WHMCS ignores it)', async () => {
     server.setFixture('GetClientsProducts', byServerFixture);
     await prov.getServicesByServer(3);
     expect(server.lastRequest()?.params.get('action')).toBe('GetClientsProducts');
-    expect(server.lastRequest()?.params.get('serverid')).toBe('3');
+    // No serverid sent — we filter client-side
+    expect(server.lastRequest()?.params.has('serverid')).toBe(false);
     // Restore
     server.setFixture('GetClientsProducts', productFixture);
   });
 
-  it('returns empty array when no services found', async () => {
+  it('returns empty when no services match the server', async () => {
     server.setFixture('GetClientsProducts', {
       result: 'success', totalresults: 0, products: { product: [] },
     });
-    const services = await prov.getServicesByServer(999);
-    expect(services).toHaveLength(0);
-    expect(services).toEqual([]);
+    const result = await prov.getServicesByServer(999);
+    expect(result.services).toHaveLength(0);
+    expect(result.totalScanned).toBe(0);
     // Restore
     server.setFixture('GetClientsProducts', productFixture);
   });
