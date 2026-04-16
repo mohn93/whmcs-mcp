@@ -27,6 +27,8 @@ import { DomainOpsDomain } from './whmcs/domains/domain-ops.js';
 import { registerDomainOpsTools } from './mcp/tools/domain-ops.js';
 import { HealthDomain } from './whmcs/domains/health.js';
 import { registerHealthTools } from './mcp/tools/health.js';
+import { ActionDomain } from './whmcs/domains/actions.js';
+import { registerActionTools } from './mcp/tools/actions.js';
 import { registerInvestigativePrompts } from './mcp/prompts/investigate.js';
 
 // Environment variables for WHMCS connection
@@ -1973,6 +1975,9 @@ async function main() {
     registerHealthTools(server, {
         health: new HealthDomain(newClient),
         capabilities,
+    });
+    registerActionTools(server, {
+        actions: new ActionDomain(newClient),
     });
 
     registerInvestigativePrompts(server);
