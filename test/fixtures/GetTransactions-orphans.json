@@ -1,0 +1,24 @@
+{
+  "result": "success",
+  "totalresults": 1,
+  "startnumber": 0,
+  "numreturned": 1,
+  "transactions": {
+    "transaction": [
+      {
+        "id": 4001,
+        "userid": 42,
+        "currency": 1,
+        "gateway": "paypal",
+        "date": "2026-02-01 11:00:00",
+        "description": "PayPal Payment - No invoice",
+        "amountin": "50.00",
+        "amountout": "0.00",
+        "rate": "1.00000",
+        "transid": "PP-orphan-789",
+        "invoiceid": 0,
+        "refundid": 0
+      }
+    ]
+  }
+}

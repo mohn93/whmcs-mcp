@@ -1,0 +1,36 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "products": {
+    "product": [
+      {
+        "id": 1001,
+        "clientid": 42,
+        "orderid": 2001,
+        "pid": 5,
+        "regdate": "2025-01-15",
+        "name": "Starter Hosting",
+        "groupname": "Web Hosting",
+        "domain": "example.test",
+        "status": "Active",
+        "nextduedate": "2026-02-01",
+        "billingcycle": "Monthly",
+        "recurringamount": "10.00"
+      },
+      {
+        "id": 1002,
+        "clientid": 42,
+        "orderid": 2002,
+        "pid": 6,
+        "regdate": "2025-06-01",
+        "name": "Pro Hosting",
+        "groupname": "Web Hosting",
+        "domain": "shop.test",
+        "status": "Active",
+        "nextduedate": "2026-02-01",
+        "billingcycle": "Monthly",
+        "recurringamount": "15.00"
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "result": "success",
+  "totalresults": 3,
+  "startnumber": 0,
+  "numreturned": 3,
+  "activity": {
+    "entry": [
+      { "date": "2026-01-15 09:00:00", "user": "System", "userid": 0, "description": "Invoice Payment Attempt Failed - Invoice #5001 - Gateway: stripe - Error: Card declined (insufficient funds)" },
+      { "date": "2026-01-10 14:30:00", "user": "System", "userid": 0, "description": "Invoice Payment Attempt Failed - Invoice #5001 - Gateway: stripe - Error: Card expired" },
+      { "date": "2026-01-01 00:01:00", "user": "System", "userid": 0, "description": "Invoice Created - Invoice #5001 for User ID: 42" }
+    ]
+  }
+}

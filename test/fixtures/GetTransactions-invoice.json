@@ -1,0 +1,38 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "startnumber": 0,
+  "numreturned": 2,
+  "transactions": {
+    "transaction": [
+      {
+        "id": 3001,
+        "userid": 42,
+        "currency": 1,
+        "gateway": "stripe",
+        "date": "2026-01-10 14:30:00",
+        "description": "Invoice Payment - Invoice #5001",
+        "amountin": "20.00",
+        "amountout": "0.00",
+        "rate": "1.00000",
+        "transid": "ch_abc123_failed",
+        "invoiceid": 5001,
+        "refundid": 0
+      },
+      {
+        "id": 3002,
+        "userid": 42,
+        "currency": 1,
+        "gateway": "stripe",
+        "date": "2026-01-12 09:15:00",
+        "description": "Invoice Payment - Invoice #5001",
+        "amountin": "30.00",
+        "amountout": "0.00",
+        "rate": "1.00000",
+        "transid": "ch_def456_success",
+        "invoiceid": 5001,
+        "refundid": 0
+      }
+    ]
+  }
+}

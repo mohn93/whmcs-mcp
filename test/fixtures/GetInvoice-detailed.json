@@ -1,0 +1,54 @@
+{
+  "result": "success",
+  "invoiceid": 5001,
+  "invoicenum": "5001",
+  "userid": 42,
+  "date": "2026-01-01",
+  "duedate": "2026-01-15",
+  "datepaid": "0000-00-00 00:00:00",
+  "status": "Unpaid",
+  "paymentmethod": "stripe",
+  "subtotal": "30.00",
+  "credit": "0.00",
+  "tax": "0.00",
+  "tax2": "0.00",
+  "total": "30.00",
+  "balance": "30.00",
+  "taxrate": "0.00",
+  "taxrate2": "0.00",
+  "currencycode": "USD",
+  "currencyprefix": "$",
+  "currencysuffix": "",
+  "notes": "",
+  "items": {
+    "item": [
+      {
+        "id": 101,
+        "type": "Hosting",
+        "relid": 1001,
+        "description": "Starter Hosting (01/01/2026 - 01/31/2026)",
+        "amount": "10.00",
+        "taxed": 0
+      },
+      {
+        "id": 102,
+        "type": "Hosting",
+        "relid": 1002,
+        "description": "Pro Hosting (01/01/2026 - 01/31/2026)",
+        "amount": "15.00",
+        "taxed": 0
+      },
+      {
+        "id": 103,
+        "type": "",
+        "relid": 0,
+        "description": "Setup Fee",
+        "amount": "5.00",
+        "taxed": 0
+      }
+    ]
+  },
+  "transactions": {
+    "transaction": []
+  }
+}
