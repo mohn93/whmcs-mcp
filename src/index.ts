@@ -23,6 +23,8 @@ import { TimelineDomain } from './whmcs/domains/timeline.js';
 import { registerTimelineTools } from './mcp/tools/timeline.js';
 import { ProductDomain } from './whmcs/domains/products.js';
 import { registerProductTools } from './mcp/tools/products.js';
+import { DomainOpsDomain } from './whmcs/domains/domain-ops.js';
+import { registerDomainOpsTools } from './mcp/tools/domain-ops.js';
 import { registerInvestigativePrompts } from './mcp/prompts/investigate.js';
 
 // Environment variables for WHMCS connection
@@ -1962,6 +1964,9 @@ async function main() {
     });
     registerProductTools(server, {
         products: new ProductDomain(newClient),
+    });
+    registerDomainOpsTools(server, {
+        domainOps: new DomainOpsDomain(newClient),
     });
 
     registerInvestigativePrompts(server);
