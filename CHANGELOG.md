@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+- `investigate-service` prompt — guided provisioning diagnostics chain
+- `investigate-invoice` prompt — guided invoice/payment diagnostics chain
+- `client-incident-triage` prompt — full client account diagnostic
+- `audit-product` prompt — product configuration and provisioning audit
 - vitest test harness with in-process mock WHMCS server
 - `WhmcsClient` base class under `src/whmcs/client.ts`
 - Runtime WHMCS version probe + capability flags (`src/whmcs/version.ts`)

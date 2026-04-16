@@ -18,6 +18,7 @@ Complete reference documentation for all tools provided by the WHMCS MCP Server.
 - [Provisioning Forensics](#provisioning-forensics)
 - [Invoice & Payment Forensics](#invoice--payment-forensics)
 - [Client Timeline](#client-timeline)
+- [Investigative Prompts](#investigative-prompts)
 
 ---
 
@@ -1397,3 +1398,63 @@ Returns a single-sign-on URL to log into the client area as this client. Require
   "reason": "CreateSsoToken API action requires WHMCS 7.7 or later."
 }
 ```
+
+---
+
+## Investigative Prompts
+
+Pre-built prompt templates that guide the LLM through multi-step diagnostic chains using existing tools. These are MCP **prompts** (not tools) -- they return a structured message that instructs the LLM which tools to call and in what order.
+
+### investigate-service
+
+Diagnose why a hosting service is broken, not provisioning, or misconfigured. Walks through provisioning forensics tools.
+
+**Arguments:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `serviceId` | string | Yes | The WHMCS service/product ID to investigate |
+
+**Tools used:** `whmcs_get_service_details`, `whmcs_get_module_log`, `whmcs_get_module_queue`, `whmcs_get_server_usage`, `whmcs_resync_service`
+
+---
+
+### investigate-invoice
+
+Diagnose why an invoice is unpaid, has wrong amounts, or has payment issues. Walks through invoice forensics tools.
+
+**Arguments:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | string | Yes | The WHMCS invoice ID to investigate |
+
+**Tools used:** `whmcs_get_invoice_audit`, `whmcs_get_payment_attempts`, `whmcs_get_dunning_log`
+
+---
+
+### client-incident-triage
+
+Full diagnostic of a client account -- timeline, open tickets, overdue invoices, failing services. The go-to prompt when a client calls in with a complaint.
+
+**Arguments:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | string | Yes | The WHMCS client ID to triage |
+
+**Tools used:** `whmcs_get_client_timeline`, `whmcs_get_payment_attempts`, `whmcs_get_service_details`, `whmcs_get_module_log`
+
+---
+
+### audit-product
+
+Review a hosting product's configuration, pricing, and provisioning setup. Useful for checking if a product is correctly configured before selling.
+
+**Arguments:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `productId` | string | Yes | The WHMCS product ID to audit |
+
+**Tools used:** `whmcs_get_products`, `whmcs_get_server_usage`, `whmcs_get_module_queue`
