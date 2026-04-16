@@ -1,0 +1,34 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "startnumber": 0,
+  "numreturned": 2,
+  "invoices": {
+    "invoice": [
+      {
+        "id": 6001,
+        "userid": 42,
+        "invoicenum": "6001",
+        "date": "2024-09-01",
+        "duedate": "2024-10-01",
+        "datepaid": "0000-00-00 00:00:00",
+        "total": "150.00",
+        "status": "Unpaid",
+        "paymentmethod": "stripe",
+        "currencycode": "USD"
+      },
+      {
+        "id": 6002,
+        "userid": 55,
+        "invoicenum": "6002",
+        "date": "2026-03-20",
+        "duedate": "2026-04-10",
+        "datepaid": "0000-00-00 00:00:00",
+        "total": "25.00",
+        "status": "Unpaid",
+        "paymentmethod": "paypal",
+        "currencycode": "USD"
+      }
+    ]
+  }
+}

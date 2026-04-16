@@ -1,0 +1,12 @@
+{
+  "result": "success",
+  "stats": {
+    "income_today": "1250.00",
+    "income_thismonth": "28500.00",
+    "income_thisyear": "142000.00",
+    "income_alltime": "980000.00",
+    "orders_pending_count": 3,
+    "tickets_awaitingreply_count": 7,
+    "invoices_unpaid_count": 12
+  }
+}

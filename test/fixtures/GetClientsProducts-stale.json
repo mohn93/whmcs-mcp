@@ -1,0 +1,60 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "products": {
+    "product": [
+      {
+        "id": 3001,
+        "clientid": 42,
+        "orderid": 4001,
+        "pid": 5,
+        "regdate": "2024-06-01",
+        "name": "Business Hosting",
+        "groupname": "Web Hosting",
+        "domain": "stale-service.test",
+        "dedicatedip": "",
+        "serverid": 0,
+        "servername": "",
+        "serverip": "",
+        "serverhostname": "",
+        "status": "Pending",
+        "nextduedate": "2024-07-01",
+        "paymentmethod": "stripe",
+        "firstpaymentamount": "50.00",
+        "recurringamount": "50.00",
+        "billingcycle": "Monthly",
+        "customfields": { "customfield": [] },
+        "configoptions": { "configoption": [] },
+        "username": "",
+        "password": "",
+        "notes": ""
+      },
+      {
+        "id": 3002,
+        "clientid": 55,
+        "orderid": 4002,
+        "pid": 8,
+        "regdate": "2026-04-14",
+        "name": "Starter VPS",
+        "groupname": "VPS Hosting",
+        "domain": "recent-pending.test",
+        "dedicatedip": "",
+        "serverid": 3,
+        "servername": "node-01",
+        "serverip": "10.0.0.3",
+        "serverhostname": "node-01.hosting.local",
+        "status": "Pending",
+        "nextduedate": "2026-05-14",
+        "paymentmethod": "stripe",
+        "firstpaymentamount": "20.00",
+        "recurringamount": "20.00",
+        "billingcycle": "Monthly",
+        "customfields": { "customfield": [] },
+        "configoptions": { "configoption": [] },
+        "username": "",
+        "password": "",
+        "notes": ""
+      }
+    ]
+  }
+}
