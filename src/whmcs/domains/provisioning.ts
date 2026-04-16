@@ -55,6 +55,30 @@ export class ProvisioningDomain {
     );
   }
 
+  async getModuleQueue(caps: { hasModuleQueue: boolean }): Promise<
+    | { supported: true; items: Array<{
+        id: number; service_type: string; service_id: number;
+        module: string; action: string; related_id: number;
+        last_attempt: string; last_attempt_error: string;
+      }> }
+    | { supported: false; reason: string }
+  > {
+    if (!caps.hasModuleQueue) {
+      return {
+        supported: false,
+        reason: 'ModuleQueue API action requires WHMCS 8.0 or later.',
+      };
+    }
+    const res = await this.client.call<{
+      queue: { item: Array<{
+        id: number; service_type: string; service_id: number;
+        module: string; action: string; related_id: number;
+        last_attempt: string; last_attempt_error: string;
+      }> };
+    }>('ModuleQueue');
+    return { supported: true, items: res.queue?.item ?? [] };
+  }
+
   async getServiceDetails(serviceId: number): Promise<ServiceDetails> {
     const res = await this.client.call<{
       totalresults: number;

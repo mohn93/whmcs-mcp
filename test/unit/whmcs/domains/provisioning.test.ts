@@ -72,3 +72,25 @@ describe('ProvisioningDomain.getModuleLog', () => {
     expect(server.lastRequest()?.params.get('limitnum')).toBe('5');
   });
 });
+
+describe('ProvisioningDomain.getModuleQueue', () => {
+  it('returns entries when capability is present', async () => {
+    const caps = { hasModuleQueue: true } as const;
+    const q = await prov.getModuleQueue(caps);
+    expect(q.supported).toBe(true);
+    if (q.supported) {
+      expect(q.items).toHaveLength(1);
+      expect(q.items[0].service_id).toBe(1001);
+      expect(q.items[0].last_attempt_error).toMatch(/domain already exists/);
+    }
+  });
+
+  it('reports unsupported when capability is missing', async () => {
+    const caps = { hasModuleQueue: false } as const;
+    const q = await prov.getModuleQueue(caps);
+    expect(q.supported).toBe(false);
+    if (!q.supported) {
+      expect(q.reason).toMatch(/WHMCS.*8/);
+    }
+  });
+});
