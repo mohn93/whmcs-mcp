@@ -22,7 +22,8 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",
     "docker:build": "docker build -t whmcs-mcp-server .",
-    "docker:run": "docker run -it --rm --env-file .env whmcs-mcp-server"
+    "docker:run": "docker run -it --rm --env-file .env whmcs-mcp-server",
+    "capture": "tsx test/scripts/capture-fixtures.ts"
   },
   "keywords": [
     "whmcs",
