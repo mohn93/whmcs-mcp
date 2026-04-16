@@ -165,6 +165,7 @@ Set the following environment variables:
 | `WHMCS_API_IDENTIFIER` | Yes | API credential identifier |
 | `WHMCS_API_SECRET` | Yes | API credential secret |
 | `WHMCS_ACCESS_KEY` | No | Optional API access key for additional security |
+| `WHMCS_ALLOW_MUTATIONS` | No  | Set to `true` to enable mutating tools (`whmcs_resync_service`, …). Default: disabled. |
 
 ### API Access Key (Optional)
 

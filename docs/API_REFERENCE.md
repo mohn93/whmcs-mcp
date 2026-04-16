@@ -15,6 +15,7 @@ Complete reference documentation for all tools provided by the WHMCS MCP Server.
 - [Affiliate Management](#affiliate-management)
 - [Promotion Management](#promotion-management)
 - [Quote Management](#quote-management)
+- [Provisioning Forensics](#provisioning-forensics)
 
 ---
 
@@ -957,3 +958,144 @@ Delete a quote.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `quoteid` | number | Yes | Quote ID |
+
+---
+
+## Provisioning Forensics
+
+Tools for diagnosing provisioning failures, inspecting service state, and reviewing server capacity.
+
+> **Note:** `whmcs_get_module_queue` requires WHMCS 8.0+. On older versions it returns a structured `{ unsupported: true }` response instead of an error.
+> `whmcs_resync_service` is a mutating tool and requires the environment variable `WHMCS_ALLOW_MUTATIONS=true`.
+
+### whmcs_get_service_details
+
+Get the full state of a single hosting/service account including status, server assignment, billing cycle, and domain.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `serviceId` | number | Yes | The service (hosting account) ID to retrieve |
+
+**Example Response:**
+```json
+{
+  "result": "success",
+  "serviceid": 42,
+  "status": "Active",
+  "server": "web-server-01",
+  "product": "Shared Hosting - Basic",
+  "domain": "example.com",
+  "billingcycle": "Monthly",
+  "nextduedate": "2026-05-01",
+  "username": "examp1",
+  "dedicatedip": "203.0.113.10"
+}
+```
+
+---
+
+### whmcs_get_module_log
+
+Get activity-log entries for module commands executed against a specific service. Useful for diagnosing provisioning or suspension failures.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `serviceId` | number | Yes | The service ID to filter log entries for |
+| `limit` | number | No | Maximum number of log entries to return (default 50) |
+
+**Example Response:**
+```json
+{
+  "result": "success",
+  "entries": [
+    {
+      "date": "2026-04-14 09:32:11",
+      "action": "CreateAccount",
+      "request": "...",
+      "response": "...",
+      "completed": true
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_get_module_queue
+
+Get pending and failed module operations from the WHMCS module queue. Requires WHMCS 8.0+; returns `{ unsupported: true, minimumVersion: "8.0" }` on older versions.
+
+**Parameters:** None
+
+**Example Response:**
+```json
+{
+  "result": "success",
+  "queue": [
+    {
+      "id": 101,
+      "serviceId": 42,
+      "module": "cpanel",
+      "action": "CreateAccount",
+      "status": "Failed",
+      "lastAttempt": "2026-04-14 10:00:00",
+      "numRetries": 3
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_get_server_usage
+
+Get per-server capacity, current utilization, and headroom. Useful for identifying overloaded servers or planning migrations.
+
+**Parameters:** None
+
+**Example Response:**
+```json
+{
+  "result": "success",
+  "servers": [
+    {
+      "id": 1,
+      "name": "web-server-01",
+      "type": "cpanel",
+      "maxAccounts": 500,
+      "activeAccounts": 347,
+      "headroom": 153
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_resync_service
+
+Re-run a module command on a service. **This is a mutating operation** and requires:
+1. The environment variable `WHMCS_ALLOW_MUTATIONS=true`
+2. The `confirm` parameter set to `true`
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `serviceId` | number | Yes | The service ID to act on |
+| `action` | string | No | Module action to execute: `Create`, `Suspend`, `Unsuspend`, `Terminate`, `ChangePackage`, `ChangePassword` (default `Create`) |
+| `confirm` | boolean | Yes | Must be `true` to proceed. Safety gate to prevent accidental execution. |
+
+**Example Response:**
+```json
+{
+  "result": "success",
+  "serviceId": 42,
+  "action": "Create",
+  "message": "Module command Create executed successfully"
+}
+```

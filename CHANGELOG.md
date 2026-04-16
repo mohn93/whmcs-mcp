@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime WHMCS version probe + capability flags (`src/whmcs/version.ts`)
 - Domain split pattern: `src/whmcs/domains/system.ts`, `src/mcp/tools/system.ts`
 - PII-scrubbing fixture capture script (`npm run capture -- <Action>`)
+- `whmcs_get_service_details` — full state of a single service
+- `whmcs_get_module_log` — activity-log entries filtered to a service
+- `whmcs_get_module_queue` — pending/failed module operations (WHMCS 8.0+)
+- `whmcs_get_server_usage` — per-server utilization & headroom
+- `whmcs_resync_service` — re-run module action (guarded by `WHMCS_ALLOW_MUTATIONS=true` + `confirm: true`)
+- Startup-time WHMCS version probe; version-gated tools report structured "unsupported" responses on older versions
 
 ## [1.2.0] - 2026-01-01
 
