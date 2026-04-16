@@ -114,4 +114,33 @@ export class ProvisioningDomain {
         : undefined,
     };
   }
+
+  async getServerUsage(): Promise<
+    Array<{
+      id: number; name: string; hostname: string; ip: string;
+      module: string; active: boolean;
+      used: number; capacity: number; percentUsed: number; headroom: number;
+    }>
+  > {
+    const res = await this.client.call<{
+      servers: Array<{
+        id: number; name: string; hostname: string; ipaddress: string;
+        noofservices: number; maxallowedservices: number; percentused: number;
+        activestatus: boolean; module: string;
+      }>;
+    }>('GetServers');
+
+    return (res.servers ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      hostname: s.hostname,
+      ip: s.ipaddress,
+      module: s.module,
+      active: s.activestatus,
+      used: s.noofservices,
+      capacity: s.maxallowedservices,
+      percentUsed: s.percentused,
+      headroom: Math.max(0, s.maxallowedservices - s.noofservices),
+    }));
+  }
 }

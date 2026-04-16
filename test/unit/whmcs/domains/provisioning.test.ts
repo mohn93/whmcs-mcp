@@ -94,3 +94,23 @@ describe('ProvisioningDomain.getModuleQueue', () => {
     }
   });
 });
+
+describe('ProvisioningDomain.getServerUsage', () => {
+  it('returns per-server utilization including headroom', async () => {
+    const u = await prov.getServerUsage();
+    expect(u).toHaveLength(2);
+    const node01 = u.find((s) => s.name === 'node-01')!;
+    expect(node01.used).toBe(85);
+    expect(node01.capacity).toBe(200);
+    expect(node01.percentUsed).toBe(42);
+    expect(node01.headroom).toBe(115);
+    expect(node01.module).toBe('cpanel');
+  });
+
+  it('flags servers over 90% utilization', async () => {
+    const u = await prov.getServerUsage();
+    const hot = u.filter((s) => s.percentUsed >= 90);
+    expect(hot).toHaveLength(1);
+    expect(hot[0].name).toBe('node-02');
+  });
+});
