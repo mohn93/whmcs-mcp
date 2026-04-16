@@ -17,6 +17,7 @@ Complete reference documentation for all tools provided by the WHMCS MCP Server.
 - [Quote Management](#quote-management)
 - [Provisioning Forensics](#provisioning-forensics)
 - [Invoice & Payment Forensics](#invoice--payment-forensics)
+- [Client Timeline](#client-timeline)
 
 ---
 
@@ -1304,4 +1305,95 @@ Returns payment reminders, failed-attempt entries, and invoice lifecycle events 
     "description": "Invoice #1042 Second Overdue Notice Sent"
   }
 ]
+```
+
+---
+
+## Client Timeline
+
+Tools for building a unified chronological view of all activity for a single client, plus a one-click SSO login into the client's admin panel.
+
+> **Note:** `whmcs_get_client_autoauth_url` requires WHMCS 7.7+. On older versions it returns a structured `{ supported: false, reason: "..." }` response instead of an error.
+
+### whmcs_get_client_timeline
+
+Returns a chronological timeline of all client events -- orders, invoices, services, tickets, and domains -- sorted newest-first.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | number | Yes | The WHMCS client ID |
+
+**Example Response:**
+```json
+{
+  "clientId": 42,
+  "events": [
+    {
+      "type": "ticket",
+      "id": 8001,
+      "date": "2026-01-05 09:30:00",
+      "summary": "[Open] Cannot access cPanel",
+      "status": "Open"
+    },
+    {
+      "type": "invoice",
+      "id": 5001,
+      "date": "2026-01-01",
+      "summary": "Invoice #5001 — $30.00 (Unpaid)",
+      "status": "Unpaid"
+    },
+    {
+      "type": "order",
+      "id": 2002,
+      "date": "2025-06-01",
+      "summary": "Order #2002 — $15.00 (Active)",
+      "status": "Active"
+    },
+    {
+      "type": "domain",
+      "id": 301,
+      "date": "2025-01-15",
+      "summary": "example.test — expires 2026-01-15 (Active)",
+      "status": "Active"
+    },
+    {
+      "type": "service",
+      "id": 1,
+      "date": "2025-01-01",
+      "summary": "Shared Hosting — example.com (Active)",
+      "status": "Active"
+    }
+  ]
+}
+```
+
+---
+
+### whmcs_get_client_autoauth_url
+
+Returns a single-sign-on URL to log into the client area as this client. Requires WHMCS 7.7+; on older versions returns `{ supported: false, reason: "..." }`.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | number | Yes | The WHMCS client ID |
+
+**Example Response (WHMCS 7.7+):**
+```json
+{
+  "supported": true,
+  "redirectUrl": "https://billing.example.com/admin/clientssummary.php?userid=42&token=sso_token_abc123",
+  "accessToken": "sso_token_abc123"
+}
+```
+
+**Example Response (older WHMCS):**
+```json
+{
+  "supported": false,
+  "reason": "CreateSsoToken API action requires WHMCS 7.7 or later."
+}
 ```

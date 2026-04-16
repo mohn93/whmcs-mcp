@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `whmcs_get_orphan_transactions` — transactions with no invoice linkage
 - `whmcs_get_credit_history` — credit applications/refunds per client (WHMCS 7.1+)
 - `whmcs_get_dunning_log` — payment reminders and invoice lifecycle events
+- `whmcs_get_client_timeline` — chronological aggregation of orders/invoices/services/tickets/domains
+- `whmcs_get_client_autoauth_url` — single-sign-on URL for client area (WHMCS 7.7+)
 
 ## [1.2.0] - 2026-01-01
 
