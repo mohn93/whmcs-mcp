@@ -158,26 +158,44 @@ export class ProvisioningDomain {
       status: string; regdate: string; nextduedate: string;
     }>;
     statusCounts: Record<string, number>;
+    note?: string;
   }> {
-    // WHMCS GetClientsProducts ignores the serverid filter param,
-    // so we must paginate through ALL services and filter client-side.
+    // WHMCS GetClientsProducts requires a clientid to return the full product record
+    // (including serverid). Without clientid, it may omit serverid entirely.
+    // Strategy: paginate with a dummy clientid is not viable, so we scan with
+    // the serverid param set (WHMCS may or may not honor it) AND also check
+    // the servername/serverip fields as fallback identifiers.
+
+    // First, get the server's name and IP for fallback matching
+    let serverName = '';
+    let serverIp = '';
+    try {
+      const serversRes = await this.client.call<{
+        servers: Array<{ id: number; name: string; ipaddress: string }>;
+      }>('GetServers');
+      const srv = (serversRes.servers ?? []).find((s) => Number(s.id) === serverId);
+      if (srv) {
+        serverName = srv.name;
+        serverIp = srv.ipaddress;
+      }
+    } catch {
+      // non-critical — we'll still try to match by serverid
+    }
+
     const PAGE_SIZE = 250;
-    const MAX_PAGES = 20; // safety cap: 5000 services
+    const MAX_PAGES = 20;
     const matched: Array<{
       id: number; clientid: number; name: string; domain: string;
       status: string; regdate: string; nextduedate: string;
     }> = [];
     let totalScanned = 0;
+    let hasServerIdField = false;
 
     for (let page = 0; page < MAX_PAGES; page++) {
       try {
         const res = await this.client.call<{
           totalresults: number;
-          products: { product: Array<{
-            id: number; clientid: number; name: string; domain: string;
-            status: string; regdate: string; nextduedate: string;
-            serverid: number;
-          }> };
+          products: { product: Array<Record<string, unknown>> };
         }>('GetClientsProducts', {
           limitstart: page * PAGE_SIZE,
           limitnum: PAGE_SIZE,
@@ -186,19 +204,45 @@ export class ProvisioningDomain {
         const products = res.products?.product ?? [];
         totalScanned += products.length;
 
+        // On first page, log what fields are available for debugging
+        if (page === 0 && products.length > 0) {
+          const fields = Object.keys(products[0]);
+          hasServerIdField = fields.includes('serverid');
+          if (process.env.WHMCS_DEBUG === 'true') {
+            console.error(`[whmcs-mcp] GetClientsProducts fields: ${fields.join(', ')}`);
+            console.error(`[whmcs-mcp] Sample serverid value: ${JSON.stringify(products[0].serverid)} (type: ${typeof products[0].serverid})`);
+            if (products[0].servername !== undefined) {
+              console.error(`[whmcs-mcp] Sample servername: ${JSON.stringify(products[0].servername)}`);
+            }
+          }
+        }
+
         for (const p of products) {
-          if (Number(p.serverid) === serverId) {
+          // Match by serverid (number or string), servername, or serverip
+          const pServerId = Number(p.serverid ?? 0);
+          const pServerName = String(p.servername ?? '');
+          const pServerIp = String(p.serverip ?? '');
+
+          const isMatch =
+            pServerId === serverId ||
+            (serverName && pServerName === serverName) ||
+            (serverIp && serverIp !== '127.0.0.1' && pServerIp === serverIp);
+
+          if (isMatch) {
             matched.push({
-              id: p.id, clientid: p.clientid, name: p.name, domain: p.domain,
-              status: p.status, regdate: p.regdate, nextduedate: p.nextduedate,
+              id: Number(p.id),
+              clientid: Number(p.clientid),
+              name: String(p.name ?? ''),
+              domain: String(p.domain ?? ''),
+              status: String(p.status ?? ''),
+              regdate: String(p.regdate ?? ''),
+              nextduedate: String(p.nextduedate ?? ''),
             });
           }
         }
 
-        // Stop if we got fewer than a full page
         if (products.length < PAGE_SIZE) break;
       } catch (err) {
-        // If a page fails, return what we have so far
         if (matched.length > 0 || totalScanned > 0) break;
         throw new Error(
           `Failed to fetch services for server ${serverId}: ${(err as Error).message}. ` +
@@ -213,7 +257,17 @@ export class ProvisioningDomain {
       statusCounts[s.status] = (statusCounts[s.status] ?? 0) + 1;
     }
 
-    return { serverId, totalScanned, services: matched, statusCounts };
+    let note: string | undefined;
+    if (matched.length === 0 && totalScanned > 0) {
+      note = !hasServerIdField
+        ? `WHMCS returned ${totalScanned} services but none included a serverid field. ` +
+          `This WHMCS version may not expose serverid in bulk GetClientsProducts responses. ` +
+          `Try querying specific clients with whmcs_get_client_timeline or whmcs_get_service_details instead.`
+        : `Scanned ${totalScanned} services but none matched server ${serverId} (${serverName || 'unknown'}). ` +
+          `The server may have services assigned via a different mechanism.`;
+    }
+
+    return { serverId, totalScanned, services: matched, statusCounts, ...(note ? { note } : {}) };
   }
 
   async getModuleDebugLog(options: {
