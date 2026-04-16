@@ -194,4 +194,34 @@ export class InvoiceDomain {
 
     return { invoiceid: invoiceId, transactions, failedAttempts };
   }
+
+  async getOrphanTransactions(options: { clientid?: number } = {}): Promise<
+    Array<{
+      id: number; gateway: string; date: string; description: string;
+      amountin: string; amountout: string; transid: string;
+      invoiceid: number; userid: number;
+    }>
+  > {
+    const res = await this.client.call<{
+      transactions: { transaction: Array<{
+        id: number; userid: number; gateway: string; date: string;
+        description: string; amountin: string; amountout: string;
+        transid: string; invoiceid: number;
+      }> };
+    }>('GetTransactions', options.clientid ? { clientid: options.clientid } : {});
+
+    return (res.transactions?.transaction ?? [])
+      .filter((t) => t.invoiceid === 0)
+      .map((t) => ({
+        id: t.id,
+        gateway: t.gateway,
+        date: t.date,
+        description: t.description,
+        amountin: t.amountin,
+        amountout: t.amountout,
+        transid: t.transid,
+        invoiceid: t.invoiceid,
+        userid: t.userid,
+      }));
+  }
 }

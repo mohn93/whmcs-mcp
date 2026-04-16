@@ -78,3 +78,24 @@ describe('InvoiceDomain.getPaymentAttempts', () => {
     expect(last?.params.get('action')).toBe('GetActivityLog');
   });
 });
+
+describe('InvoiceDomain.getOrphanTransactions', () => {
+  it('returns transactions with no invoice linkage', async () => {
+    server.setFixture('GetTransactions', txOrphanFixture);
+    const orphans = await inv.getOrphanTransactions();
+    expect(orphans).toHaveLength(1);
+    expect(orphans[0].transid).toBe('PP-orphan-789');
+    expect(orphans[0].invoiceid).toBe(0);
+    expect(orphans[0].amountin).toBe('50.00');
+    // restore fixture for other tests
+    server.setFixture('GetTransactions', txInvoiceFixture);
+  });
+
+  it('includes gateway and date in each orphan', async () => {
+    server.setFixture('GetTransactions', txOrphanFixture);
+    const orphans = await inv.getOrphanTransactions();
+    expect(orphans[0].gateway).toBe('paypal');
+    expect(orphans[0].date).toBe('2026-02-01 11:00:00');
+    server.setFixture('GetTransactions', txInvoiceFixture);
+  });
+});
