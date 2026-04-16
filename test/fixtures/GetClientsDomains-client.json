@@ -1,0 +1,20 @@
+{
+  "result": "success",
+  "totalresults": 1,
+  "startnumber": 0,
+  "numreturned": 1,
+  "domains": {
+    "domain": [
+      {
+        "id": 301,
+        "userid": 42,
+        "domainname": "example.test",
+        "regdate": "2025-01-15",
+        "expirydate": "2026-01-15",
+        "nextduedate": "2026-01-15",
+        "registrar": "enom",
+        "status": "Active"
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "result": "success",
+  "totalresults": 1,
+  "startnumber": 0,
+  "numreturned": 1,
+  "tickets": {
+    "ticket": [
+      {
+        "id": 8001,
+        "tid": "TKT-8001",
+        "userid": 42,
+        "date": "2026-01-05 09:30:00",
+        "deptname": "Support",
+        "subject": "Cannot access cPanel",
+        "status": "Open",
+        "priority": "High",
+        "lastreply": "2026-01-06 11:00:00"
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "result": "success",
+  "access_token": "sso_token_abc123",
+  "redirect_url": "https://billing.example.com/admin/clientssummary.php?userid=42&token=sso_token_abc123"
+}

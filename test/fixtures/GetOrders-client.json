@@ -1,0 +1,28 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "startnumber": 0,
+  "numreturned": 2,
+  "orders": {
+    "order": [
+      {
+        "id": 2001,
+        "ordernum": 2001,
+        "userid": 42,
+        "date": "2025-01-15",
+        "amount": "10.00",
+        "paymentmethod": "stripe",
+        "status": "Active"
+      },
+      {
+        "id": 2002,
+        "ordernum": 2002,
+        "userid": 42,
+        "date": "2025-06-01",
+        "amount": "15.00",
+        "paymentmethod": "stripe",
+        "status": "Active"
+      }
+    ]
+  }
+}
