@@ -3,7 +3,9 @@ import { WhmcsClient } from '../../../../src/whmcs/client';
 import { ProvisioningDomain } from '../../../../src/whmcs/domains/provisioning';
 import { startMockWhmcs, type MockWhmcsServer } from '../../../mock-whmcs';
 import productFixture from '../../../fixtures/GetClientsProducts-service.json';
+import byServerFixture from '../../../fixtures/GetClientsProducts-byserver.json';
 import activityFixture from '../../../fixtures/GetActivityLog-service.json';
+import moduleLogFixture from '../../../fixtures/GetModuleLog.json';
 import moduleQueueFixture from '../../../fixtures/ModuleQueue.json';
 import serversFixture from '../../../fixtures/GetServers-with-usage.json';
 import moduleCustomFixture from '../../../fixtures/ModuleCustom-createAccount.json';
@@ -209,5 +211,130 @@ describe('ProvisioningDomain.resyncService', () => {
     const r = await prov.resyncService(1001, 'Terminate');
     expect(r.message).toMatch(/successfully/i);
     expect(server.lastRequest()!.params.get('func_name')).toBe('Terminate');
+  });
+});
+
+describe('ProvisioningDomain.getServicesByServer', () => {
+  it('returns services filtered by server', async () => {
+    server.setFixture('GetClientsProducts', byServerFixture);
+    const services = await prov.getServicesByServer(3);
+    expect(services).toHaveLength(2);
+    expect(services[0].id).toBe(1001);
+    expect(services[0].domain).toBe('example.test');
+    expect(services[0].status).toBe('Active');
+    expect(services[1].id).toBe(1003);
+    expect(services[1].status).toBe('Suspended');
+    // Restore
+    server.setFixture('GetClientsProducts', productFixture);
+  });
+
+  it('sends serverid param to WHMCS', async () => {
+    server.setFixture('GetClientsProducts', byServerFixture);
+    await prov.getServicesByServer(3);
+    expect(server.lastRequest()?.params.get('action')).toBe('GetClientsProducts');
+    expect(server.lastRequest()?.params.get('serverid')).toBe('3');
+    // Restore
+    server.setFixture('GetClientsProducts', productFixture);
+  });
+
+  it('returns empty array when no services found', async () => {
+    server.setFixture('GetClientsProducts', {
+      result: 'success', totalresults: 0, products: { product: [] },
+    });
+    const services = await prov.getServicesByServer(999);
+    expect(services).toHaveLength(0);
+    expect(services).toEqual([]);
+    // Restore
+    server.setFixture('GetClientsProducts', productFixture);
+  });
+});
+
+describe('ProvisioningDomain.getModuleDebugLog', () => {
+  it('returns module_log source when GetModuleLog succeeds', async () => {
+    server.setFixture('GetModuleLog', moduleLogFixture);
+    const result = await prov.getModuleDebugLog({ module: 'cpanel' });
+    expect(result.source).toBe('module_log');
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries[0].action).toBe('CreateAccount');
+    expect(result.entries[0].request).toContain('createacct');
+    expect(result.entries[0].response).toContain('domain already exists');
+  });
+
+  it('falls back to activity_log source when GetModuleLog fails', async () => {
+    // Do NOT set a GetModuleLog fixture — mock returns error for unknown actions
+    server.setFixture('GetModuleLog', undefined as any);
+    // Remove the fixture so it falls back
+    const fixtures = (server as any);
+    // The mock returns an error for unknown actions, which client.call throws on
+    // We need to ensure GetModuleLog is NOT registered
+    server.setFixture('GetActivityLog', activityFixture);
+    const result = await prov.getModuleDebugLog({ serviceId: 1001 });
+    expect(result.source).toBe('activity_log');
+    expect(result.entries.length).toBeGreaterThan(0);
+    expect(result.entries.every((e) => /module/i.test(e.description ?? ''))).toBe(true);
+    // Restore
+    server.setFixture('GetActivityLog', activityFixture);
+  });
+
+  it('filters activity entries to module-related ones', async () => {
+    // Remove GetModuleLog fixture to trigger fallback
+    server.setFixture('GetModuleLog', undefined as any);
+    server.setFixture('GetActivityLog', activityFixture);
+    const result = await prov.getModuleDebugLog({ serviceId: 1001 });
+    expect(result.source).toBe('activity_log');
+    // The activity fixture has 3 entries, but only 2 contain "Module"
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries.every((e) => /module/i.test(e.description ?? ''))).toBe(true);
+    // Restore
+    server.setFixture('GetActivityLog', activityFixture);
+  });
+});
+
+describe('ProvisioningDomain.getServerModules', () => {
+  it('groups servers by module name', async () => {
+    server.setFixture('GetServers', {
+      result: 'success',
+      servers: [
+        { id: 3, name: 'node-01', hostname: 'node-01.local', module: 'cpanel', activestatus: true, noofservices: 85, maxallowedservices: 200, percentused: 42 },
+        { id: 4, name: 'node-02', hostname: 'node-02.local', module: 'cpanel', activestatus: true, noofservices: 195, maxallowedservices: 200, percentused: 97 },
+        { id: 5, name: 'plesk-01', hostname: 'plesk-01.local', module: 'plesk', activestatus: true, noofservices: 50, maxallowedservices: 100, percentused: 50 },
+      ],
+    });
+    const modules = await prov.getServerModules();
+    expect(modules).toHaveLength(2);
+    const cpanel = modules.find((m) => m.module === 'cpanel')!;
+    expect(cpanel).toBeDefined();
+    expect(cpanel.servers).toHaveLength(2);
+    const plesk = modules.find((m) => m.module === 'plesk')!;
+    expect(plesk).toBeDefined();
+    expect(plesk.servers).toHaveLength(1);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
+  });
+
+  it('calculates totals correctly', async () => {
+    server.setFixture('GetServers', {
+      result: 'success',
+      servers: [
+        { id: 3, name: 'node-01', hostname: 'node-01.local', module: 'cpanel', activestatus: true, noofservices: 85, maxallowedservices: 200, percentused: 42 },
+        { id: 4, name: 'node-02', hostname: 'node-02.local', module: 'cpanel', activestatus: true, noofservices: 195, maxallowedservices: 200, percentused: 97 },
+      ],
+    });
+    const modules = await prov.getServerModules();
+    const cpanel = modules.find((m) => m.module === 'cpanel')!;
+    expect(cpanel.totalServers).toBe(2);
+    expect(cpanel.totalCapacity).toBe(400);
+    expect(cpanel.totalUsed).toBe(280);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
+  });
+
+  it('returns empty array when no servers exist', async () => {
+    server.setFixture('GetServers', { result: 'success', servers: [] });
+    const modules = await prov.getServerModules();
+    expect(modules).toHaveLength(0);
+    expect(modules).toEqual([]);
+    // Restore
+    server.setFixture('GetServers', serversFixture);
   });
 });

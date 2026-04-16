@@ -150,6 +150,99 @@ export class ProvisioningDomain {
     }));
   }
 
+  async getServicesByServer(serverId: number): Promise<Array<{
+    id: number; clientid: number; name: string; domain: string;
+    status: string; regdate: string; nextduedate: string;
+  }>> {
+    const res = await this.client.call<{
+      products: { product: Array<{
+        id: number; clientid: number; name: string; domain: string;
+        status: string; regdate: string; nextduedate: string;
+        serverid: number;
+      }> };
+    }>('GetClientsProducts', { serverid: serverId });
+    return (res.products?.product ?? []).map((p) => ({
+      id: p.id, clientid: p.clientid, name: p.name, domain: p.domain,
+      status: p.status, regdate: p.regdate, nextduedate: p.nextduedate,
+    }));
+  }
+
+  async getModuleDebugLog(options: {
+    serviceId?: number;
+    module?: string;
+    limit?: number;
+  } = {}): Promise<{
+    source: 'module_log' | 'activity_log';
+    entries: Array<{ date: string; action: string; request?: string; response?: string; description?: string }>;
+  }> {
+    // Try GetModuleLog first (WHMCS 8.x)
+    try {
+      const res = await this.client.call<{
+        logs: { log: Array<{
+          date: string; action: string; request: string; response: string;
+        }> };
+      }>('GetModuleLog', {
+        ...(options.module ? { module: options.module } : {}),
+        limitnum: options.limit ?? 50,
+      });
+      const entries = res.logs?.log ?? [];
+      return { source: 'module_log', entries: entries.map((e) => ({
+        date: e.date, action: e.action, request: e.request, response: e.response,
+      })) };
+    } catch {
+      // Fallback: use activity log filtered for module entries
+      const desc = options.serviceId ? `Service ID ${options.serviceId}` : 'Module';
+      const res = await this.client.call<{
+        activity: { entry: Array<{ date: string; description: string }> };
+      }>('GetActivityLog', {
+        description: desc,
+        limitnum: options.limit ?? 50,
+      });
+      const entries = (res.activity?.entry ?? [])
+        .filter((e) => /module/i.test(e.description))
+        .map((e) => ({ date: e.date, action: 'activity', description: e.description }));
+      return { source: 'activity_log', entries };
+    }
+  }
+
+  async getServerModules(): Promise<Array<{
+    module: string;
+    servers: Array<{ id: number; name: string; hostname: string; active: boolean; percentUsed: number }>;
+    totalServers: number;
+    totalCapacity: number;
+    totalUsed: number;
+  }>> {
+    const res = await this.client.call<{
+      servers: Array<{
+        id: number; name: string; hostname: string; module: string;
+        activestatus: boolean; noofservices: number; maxallowedservices: number; percentused: number;
+      }>;
+    }>('GetServers');
+
+    const byModule = new Map<string, Array<{
+      id: number; name: string; hostname: string; active: boolean;
+      percentUsed: number; used: number; capacity: number;
+    }>>();
+
+    for (const s of res.servers ?? []) {
+      const key = s.module || 'unknown';
+      if (!byModule.has(key)) byModule.set(key, []);
+      byModule.get(key)!.push({
+        id: s.id, name: s.name, hostname: s.hostname,
+        active: s.activestatus, percentUsed: s.percentused,
+        used: s.noofservices, capacity: s.maxallowedservices,
+      });
+    }
+
+    return Array.from(byModule.entries()).map(([module, servers]) => ({
+      module,
+      servers: servers.map(({ id, name, hostname, active, percentUsed }) => ({ id, name, hostname, active, percentUsed })),
+      totalServers: servers.length,
+      totalCapacity: servers.reduce((sum, s) => sum + s.capacity, 0),
+      totalUsed: servers.reduce((sum, s) => sum + s.used, 0),
+    }));
+  }
+
   async resyncService(
     serviceId: number,
     action: ModuleAction = 'Create',
