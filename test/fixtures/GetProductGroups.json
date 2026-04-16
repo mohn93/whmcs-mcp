@@ -1,0 +1,9 @@
+{
+  "result": "success",
+  "totalresults": 1,
+  "productgroups": {
+    "productgroup": [
+      { "id": 1, "name": "Web Hosting", "headline": "Hosting Plans", "tagline": "Fast & Reliable", "orderfrmtpl": "standard" }
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "result": "success",
+  "totalresults": 2,
+  "products": {
+    "product": [
+      {
+        "pid": 5,
+        "gid": 1,
+        "type": "hostingaccount",
+        "name": "Starter Hosting",
+        "description": "Basic hosting plan",
+        "module": "cpanel",
+        "paytype": "recurring",
+        "pricing": {
+          "USD": {
+            "prefix": "$", "suffix": "",
+            "msetupfee": "5.00", "monthly": "10.00",
+            "qsetupfee": "5.00", "quarterly": "27.00",
+            "ssetupfee": "0.00", "semiannually": "50.00",
+            "asetupfee": "0.00", "annually": "96.00",
+            "bsetupfee": "0.00", "biennially": "180.00",
+            "tsetupfee": "0.00", "triennially": "252.00"
+          }
+        }
+      },
+      {
+        "pid": 6,
+        "gid": 1,
+        "type": "hostingaccount",
+        "name": "Pro Hosting",
+        "description": "Advanced hosting plan",
+        "module": "cpanel",
+        "paytype": "recurring",
+        "pricing": {
+          "USD": {
+            "prefix": "$", "suffix": "",
+            "msetupfee": "0.00", "monthly": "25.00",
+            "qsetupfee": "0.00", "quarterly": "67.50",
+            "ssetupfee": "0.00", "semiannually": "125.00",
+            "asetupfee": "0.00", "annually": "240.00",
+            "bsetupfee": "0.00", "biennially": "450.00",
+            "tsetupfee": "0.00", "triennially": "630.00"
+          }
+        }
+      }
+    ]
+  }
+}
