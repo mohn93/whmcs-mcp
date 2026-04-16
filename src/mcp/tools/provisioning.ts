@@ -112,6 +112,81 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
     },
   );
 
+  server.registerTool(
+    'whmcs_get_services_by_server',
+    {
+      title: 'Get Services by Server',
+      description:
+        'Returns all services hosted on a specific server, with their statuses. Use with whmcs_get_server_usage to investigate a server.',
+      inputSchema: {
+        serverId: { type: 'number', description: 'The WHMCS server ID' },
+      },
+    },
+    async ({ serverId }: { serverId: number }) => {
+      try {
+        const result = await deps.provisioning.getServicesByServer(serverId);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err: unknown) {
+        return {
+          content: [{ type: 'text' as const, text: (err as Error).message }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    'whmcs_get_module_debug_log',
+    {
+      title: 'Get Module Debug Log',
+      description:
+        'Returns raw module debug log entries (request/response payloads) when available (WHMCS 8.x), or falls back to activity log module entries. Use to debug provisioning API failures.',
+      inputSchema: {
+        serviceId: { type: 'number', description: 'Optional WHMCS service/product ID to filter by' },
+        module: { type: 'string', description: 'Optional module name to filter by (e.g. "cpanel")' },
+        limit: { type: 'number', description: 'Maximum number of log entries to return (default 50)' },
+      },
+    },
+    async ({ serviceId, module, limit }: { serviceId?: number; module?: string; limit?: number }) => {
+      try {
+        const result = await deps.provisioning.getModuleDebugLog({ serviceId, module, limit });
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err: unknown) {
+        return {
+          content: [{ type: 'text' as const, text: (err as Error).message }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    'whmcs_get_server_modules',
+    {
+      title: 'Get Server Modules',
+      description:
+        'Returns provisioning modules with their assigned servers, capacity totals, and utilization. Shows which modules (cPanel, Plesk, etc.) are configured and how loaded they are.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const result = await deps.provisioning.getServerModules();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (err: unknown) {
+        return {
+          content: [{ type: 'text' as const, text: (err as Error).message }],
+          isError: true,
+        };
+      }
+    },
+  );
+
   // ── Mutating tool (guarded) ──────────────────────────────────────
 
   server.registerTool(

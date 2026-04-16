@@ -6,7 +6,9 @@ import { startMockWhmcs, type MockWhmcsServer } from '../../../mock-whmcs';
 import type { Capabilities } from '../../../../src/whmcs/version';
 
 import productFixture from '../../../fixtures/GetClientsProducts-service.json';
+import byServerFixture from '../../../fixtures/GetClientsProducts-byserver.json';
 import activityFixture from '../../../fixtures/GetActivityLog-service.json';
+import moduleLogFixture from '../../../fixtures/GetModuleLog.json';
 import moduleQueueFixture from '../../../fixtures/ModuleQueue.json';
 import serversFixture from '../../../fixtures/GetServers-with-usage.json';
 import moduleCustomFixture from '../../../fixtures/ModuleCustom-createAccount.json';
@@ -66,7 +68,7 @@ function register(caps: Partial<Capabilities> = {}): void {
 }
 
 describe('registerProvisioningTools', () => {
-  it('registers all 5 provisioning tools', () => {
+  it('registers all 8 provisioning tools', () => {
     register();
     const names = mockMcpServer.registerTool.mock.calls.map((c: any[]) => c[0]);
     expect(names).toEqual([
@@ -74,6 +76,9 @@ describe('registerProvisioningTools', () => {
       'whmcs_get_module_log',
       'whmcs_get_module_queue',
       'whmcs_get_server_usage',
+      'whmcs_get_services_by_server',
+      'whmcs_get_module_debug_log',
+      'whmcs_get_server_modules',
       'whmcs_resync_service',
     ]);
   });
@@ -157,5 +162,68 @@ describe('registerProvisioningTools', () => {
     expect(parsed).toHaveLength(2);
     expect(parsed[0].name).toBe('node-01');
     expect(parsed[1].percentUsed).toBe(97);
+  });
+
+  it('whmcs_get_services_by_server returns services for a server', async () => {
+    whmcsServer.setFixture('GetClientsProducts', byServerFixture);
+    register();
+    const handler = registrations['whmcs_get_services_by_server'];
+    const result = await handler({ serverId: 3 });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].domain).toBe('example.test');
+    expect(parsed[1].status).toBe('Suspended');
+    // Restore
+    whmcsServer.setFixture('GetClientsProducts', productFixture);
+  });
+
+  it('whmcs_get_module_debug_log returns module log when available', async () => {
+    whmcsServer.setFixture('GetModuleLog', moduleLogFixture);
+    register();
+    const handler = registrations['whmcs_get_module_debug_log'];
+    const result = await handler({ module: 'cpanel' });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.source).toBe('module_log');
+    expect(parsed.entries).toHaveLength(2);
+    expect(parsed.entries[0].action).toBe('CreateAccount');
+  });
+
+  it('whmcs_get_module_debug_log falls back to activity log', async () => {
+    // Remove GetModuleLog fixture to trigger fallback
+    whmcsServer.setFixture('GetModuleLog', undefined as any);
+    whmcsServer.setFixture('GetActivityLog', activityFixture);
+    register();
+    const handler = registrations['whmcs_get_module_debug_log'];
+    const result = await handler({ serviceId: 1001 });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.source).toBe('activity_log');
+    expect(parsed.entries.length).toBeGreaterThan(0);
+    // Restore
+    whmcsServer.setFixture('GetActivityLog', activityFixture);
+  });
+
+  it('whmcs_get_server_modules returns module-grouped server data', async () => {
+    whmcsServer.setFixture('GetServers', {
+      result: 'success',
+      servers: [
+        { id: 3, name: 'node-01', hostname: 'node-01.local', module: 'cpanel', activestatus: true, noofservices: 85, maxallowedservices: 200, percentused: 42 },
+        { id: 5, name: 'plesk-01', hostname: 'plesk-01.local', module: 'plesk', activestatus: true, noofservices: 50, maxallowedservices: 100, percentused: 50 },
+      ],
+    });
+    register();
+    const handler = registrations['whmcs_get_server_modules'];
+    const result = await handler({});
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed).toHaveLength(2);
+    const cpanel = parsed.find((m: any) => m.module === 'cpanel');
+    expect(cpanel).toBeDefined();
+    expect(cpanel.totalServers).toBe(1);
+    expect(cpanel.totalCapacity).toBe(200);
+    // Restore
+    whmcsServer.setFixture('GetServers', serversFixture);
   });
 });
