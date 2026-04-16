@@ -197,22 +197,30 @@ export class HealthDomain {
       }
     }
 
-    // Fetch services in Pending status
+    // Fetch services in Pending status — paginate to avoid WHMCS OOM
     let staleServices: Inconsistencies['staleServices'] = [];
     try {
-      const productsRes = await this.client.call<{
-        products: {
-          product: Array<{
-            id: number;
-            clientid: number;
-            name: string;
-            status: string;
-            regdate: string;
-          }>;
-        };
-      }>('GetClientsProducts', { status: 'Pending', limitnum: 500 });
+      const PAGE_SIZE = 100;
+      const allPending: Array<{ id: number; clientid: number; name: string; status: string; regdate: string }> = [];
 
-      staleServices = (productsRes.products?.product ?? [])
+      for (let page = 0; page < 5; page++) {
+        const productsRes = await this.client.call<{
+          products: {
+            product: Array<{
+              id: number; clientid: number; name: string; status: string; regdate: string;
+            }>;
+          };
+        }>('GetClientsProducts', {
+          status: 'Pending',
+          limitstart: page * PAGE_SIZE,
+          limitnum: PAGE_SIZE,
+        });
+        const products = productsRes.products?.product ?? [];
+        allPending.push(...products);
+        if (products.length < PAGE_SIZE) break;
+      }
+
+      staleServices = allPending
         .filter((svc) => {
           if (svc.status !== 'Pending') return false;
           const regDate = new Date(svc.regdate);
