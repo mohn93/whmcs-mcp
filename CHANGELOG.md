@@ -30,6 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `whmcs_get_dunning_log` — payment reminders and invoice lifecycle events
 - `whmcs_get_client_timeline` — chronological aggregation of orders/invoices/services/tickets/domains
 - `whmcs_get_client_autoauth_url` — single-sign-on URL for client area (WHMCS 7.7+)
+- `whmcs_get_product_full` — enriched product details with pricing and module info
+- `whmcs_get_product_groups` — list product groups
+- `whmcs_get_client_addons` — client's active products/services
+- `whmcs_get_pending_transfers` — domains in Pending Transfer status
+- `whmcs_get_upcoming_renewals` — domains expiring within N days
+- `whmcs_get_domain_details` — full domain state (registrar, expiry, status)
+- `whmcs_get_health_summary` — composite system health dashboard
+- `whmcs_find_inconsistencies` — detect overdue invoices and stale services
+- `whmcs_apply_credit` — apply credit to invoice (mutation-gated)
+- `whmcs_resend_welcome_email` — resend product welcome email (mutation-gated)
+- `whmcs_send_invoice_reminder` — send invoice payment reminder (mutation-gated)
+- `whmcs_update_ticket_status` — update support ticket status (mutation-gated)
 
 ## [1.2.0] - 2026-01-01
 

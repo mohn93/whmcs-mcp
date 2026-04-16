@@ -18,6 +18,10 @@ Complete reference documentation for all tools provided by the WHMCS MCP Server.
 - [Provisioning Forensics](#provisioning-forensics)
 - [Invoice & Payment Forensics](#invoice--payment-forensics)
 - [Client Timeline](#client-timeline)
+- [Product Audit](#product-audit)
+- [Domain Ops](#domain-ops)
+- [Health & Integrity](#health--integrity)
+- [Safe Action Tools](#safe-action-tools)
 - [Investigative Prompts](#investigative-prompts)
 
 ---
@@ -1398,6 +1402,151 @@ Returns a single-sign-on URL to log into the client area as this client. Require
   "reason": "CreateSsoToken API action requires WHMCS 7.7 or later."
 }
 ```
+
+---
+
+## Product Audit
+
+### whmcs_get_product_full
+
+Enriched product details including pricing tiers and module configuration.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `productId` | number | Yes | The WHMCS product ID |
+
+---
+
+### whmcs_get_product_groups
+
+List all product groups configured in WHMCS.
+
+**Parameters:** None
+
+---
+
+### whmcs_get_client_addons
+
+List a client's active products/services (add-ons).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clientId` | number | Yes | The WHMCS client ID |
+
+---
+
+## Domain Ops
+
+### whmcs_get_pending_transfers
+
+List domains currently in Pending Transfer status.
+
+**Parameters:** None
+
+---
+
+### whmcs_get_upcoming_renewals
+
+List domains expiring within the specified number of days.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `daysAhead` | number | No | Number of days to look ahead (default 30) |
+
+---
+
+### whmcs_get_domain_details
+
+Full domain state including registrar, expiry date, and status.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domainId` | number | Yes | The WHMCS domain ID |
+
+---
+
+## Health & Integrity
+
+### whmcs_get_health_summary
+
+Composite system health dashboard. Aggregates key metrics (overdue invoices, expiring domains, failing services, ticket backlog) into a single view.
+
+**Parameters:** None
+
+---
+
+### whmcs_find_inconsistencies
+
+Detect data inconsistencies such as overdue invoices on active services, stale pending orders, and mismatched domain states.
+
+**Parameters:** None
+
+---
+
+## Safe Action Tools
+
+> **Mutation guard:** All tools in this section require the environment variable `WHMCS_ALLOW_MUTATIONS=true` **and** the `confirm: true` parameter. Requests that omit either safeguard are rejected before any API call is made.
+
+### whmcs_apply_credit
+
+Apply account credit to an invoice.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | number | Yes | The invoice ID to apply credit to |
+| `amount` | number | Yes | Amount of credit to apply |
+| `confirm` | boolean | Yes | Must be `true` to execute the mutation |
+
+---
+
+### whmcs_resend_welcome_email
+
+Resend the product/service welcome email to the client.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `serviceId` | number | Yes | The service/product ID |
+| `confirm` | boolean | Yes | Must be `true` to execute the mutation |
+
+---
+
+### whmcs_send_invoice_reminder
+
+Send a payment reminder email for an invoice.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `invoiceId` | number | Yes | The invoice ID |
+| `confirm` | boolean | Yes | Must be `true` to execute the mutation |
+
+---
+
+### whmcs_update_ticket_status
+
+Update the status of a support ticket.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ticketId` | number | Yes | The ticket ID |
+| `status` | string | Yes | New status to set |
+| `message` | string | No | Optional message/note to add |
+| `confirm` | boolean | Yes | Must be `true` to execute the mutation |
 
 ---
 
