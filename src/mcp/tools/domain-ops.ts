@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { DomainOpsDomain } from '../../whmcs/domains/domain-ops.js';
 
 export interface DomainOpsToolDeps {
@@ -35,7 +36,7 @@ export function registerDomainOpsTools(server: any, deps: DomainOpsToolDeps): vo
       description:
         'Returns domains expiring within the specified number of days ahead.',
       inputSchema: {
-        daysAhead: { type: 'number', description: 'Number of days to look ahead (default 30)' },
+        daysAhead: z.number().optional().describe('Number of days to look ahead (default 30)'),
       },
     },
     async ({ daysAhead }: { daysAhead?: number }) => {
@@ -51,7 +52,7 @@ export function registerDomainOpsTools(server: any, deps: DomainOpsToolDeps): vo
       description:
         'Returns the full domain record for a specific domain ID.',
       inputSchema: {
-        domainId: { type: 'number', description: 'The WHMCS domain ID' },
+        domainId: z.number().describe('The WHMCS domain ID'),
       },
     },
     async ({ domainId }: { domainId: number }) => {

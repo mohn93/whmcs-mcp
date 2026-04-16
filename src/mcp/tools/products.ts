@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { ProductDomain } from '../../whmcs/domains/products.js';
 
 export interface ProductToolDeps {
@@ -21,7 +22,7 @@ export function registerProductTools(server: any, deps: ProductToolDeps): void {
       description:
         'Returns enriched product details including pricing tiers, module, server group, and pay type for a specific WHMCS product.',
       inputSchema: {
-        productId: { type: 'number', description: 'The WHMCS product ID (pid)' },
+        productId: z.number().describe('The WHMCS product ID (pid)'),
       },
     },
     async ({ productId }: { productId: number }) => {
@@ -51,7 +52,7 @@ export function registerProductTools(server: any, deps: ProductToolDeps): void {
       description:
         'Returns a simplified list of products/services for a client, including status, billing cycle, and recurring amount.',
       inputSchema: {
-        clientId: { type: 'number', description: 'The WHMCS client ID' },
+        clientId: z.number().describe('The WHMCS client ID'),
       },
     },
     async ({ clientId }: { clientId: number }) => {

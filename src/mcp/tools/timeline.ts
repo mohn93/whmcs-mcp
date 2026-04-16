@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { TimelineDomain } from '../../whmcs/domains/timeline.js';
 import type { Capabilities } from '../../whmcs/version.js';
 
@@ -22,7 +23,7 @@ export function registerTimelineTools(server: any, deps: TimelineToolDeps): void
       title: 'Get Client Timeline',
       description: 'Returns a chronological timeline of all client events: orders, invoices, services, tickets, and domains — sorted newest-first.',
       inputSchema: {
-        clientId: { type: 'number', description: 'The WHMCS client ID' },
+        clientId: z.number().describe('The WHMCS client ID'),
       },
     },
     async ({ clientId }: { clientId: number }) => {
@@ -37,7 +38,7 @@ export function registerTimelineTools(server: any, deps: TimelineToolDeps): void
       title: 'Get Client Auto-Auth URL',
       description: 'Returns a single-sign-on URL to log into the client area as this client (WHMCS 7.7+).',
       inputSchema: {
-        clientId: { type: 'number', description: 'The WHMCS client ID' },
+        clientId: z.number().describe('The WHMCS client ID'),
       },
     },
     async ({ clientId }: { clientId: number }) => {

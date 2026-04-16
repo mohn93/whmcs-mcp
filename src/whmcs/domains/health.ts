@@ -210,7 +210,7 @@ export class HealthDomain {
             regdate: string;
           }>;
         };
-      }>('GetClientsProducts', { status: 'Pending' });
+      }>('GetClientsProducts', { status: 'Pending', limitnum: 500 });
 
       staleServices = (productsRes.products?.product ?? [])
         .filter((svc) => {

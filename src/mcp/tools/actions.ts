@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { ActionDomain } from '../../whmcs/domains/actions.js';
 import { requireMutations } from '../mutations.js';
 
@@ -17,12 +18,9 @@ export function registerActionTools(server: any, deps: ActionToolDeps): void {
         'Applies a credit amount to an existing invoice. ' +
         'This is a MUTATING action — requires WHMCS_ALLOW_MUTATIONS=true and confirm: true.',
       inputSchema: {
-        invoiceId: { type: 'number', description: 'The WHMCS invoice ID' },
-        amount: { type: 'number', description: 'Credit amount to apply' },
-        confirm: {
-          type: 'boolean',
-          description: 'Must be true to confirm the mutating operation',
-        },
+        invoiceId: z.number().describe('The WHMCS invoice ID'),
+        amount: z.number().describe('Credit amount to apply'),
+        confirm: z.boolean().optional().describe('Must be true to confirm the mutating operation'),
       },
     },
     async ({ invoiceId, amount, confirm }: { invoiceId: number; amount: number; confirm?: boolean }) => {
@@ -49,11 +47,8 @@ export function registerActionTools(server: any, deps: ActionToolDeps): void {
         'Re-sends the Product Welcome Email for a hosting service. ' +
         'This is a MUTATING action — requires WHMCS_ALLOW_MUTATIONS=true and confirm: true.',
       inputSchema: {
-        serviceId: { type: 'number', description: 'The WHMCS service/product ID' },
-        confirm: {
-          type: 'boolean',
-          description: 'Must be true to confirm the mutating operation',
-        },
+        serviceId: z.number().describe('The WHMCS service/product ID'),
+        confirm: z.boolean().optional().describe('Must be true to confirm the mutating operation'),
       },
     },
     async ({ serviceId, confirm }: { serviceId: number; confirm?: boolean }) => {
@@ -83,11 +78,8 @@ export function registerActionTools(server: any, deps: ActionToolDeps): void {
         'Sends an Invoice Payment Reminder email for the specified invoice. ' +
         'This is a MUTATING action — requires WHMCS_ALLOW_MUTATIONS=true and confirm: true.',
       inputSchema: {
-        invoiceId: { type: 'number', description: 'The WHMCS invoice ID' },
-        confirm: {
-          type: 'boolean',
-          description: 'Must be true to confirm the mutating operation',
-        },
+        invoiceId: z.number().describe('The WHMCS invoice ID'),
+        confirm: z.boolean().optional().describe('Must be true to confirm the mutating operation'),
       },
     },
     async ({ invoiceId, confirm }: { invoiceId: number; confirm?: boolean }) => {
@@ -117,13 +109,10 @@ export function registerActionTools(server: any, deps: ActionToolDeps): void {
         'Updates the status of a support ticket (e.g., Open, In Progress, Closed). ' +
         'This is a MUTATING action — requires WHMCS_ALLOW_MUTATIONS=true and confirm: true.',
       inputSchema: {
-        ticketId: { type: 'number', description: 'The WHMCS ticket ID' },
-        status: { type: 'string', description: 'New ticket status (e.g., Open, In Progress, Closed)' },
-        message: { type: 'string', description: 'Optional message to add when updating the ticket' },
-        confirm: {
-          type: 'boolean',
-          description: 'Must be true to confirm the mutating operation',
-        },
+        ticketId: z.number().describe('The WHMCS ticket ID'),
+        status: z.string().describe('New ticket status (e.g., Open, In Progress, Closed)'),
+        message: z.string().optional().describe('Optional message to add when updating the ticket'),
+        confirm: z.boolean().optional().describe('Must be true to confirm the mutating operation'),
       },
     },
     async ({ ticketId, status, message, confirm }: { ticketId: number; status: string; message?: string; confirm?: boolean }) => {

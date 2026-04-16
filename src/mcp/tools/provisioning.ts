@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { ProvisioningDomain } from '../../whmcs/domains/provisioning.js';
 import type { Capabilities } from '../../whmcs/version.js';
 import { requireMutations } from '../mutations.js';
@@ -22,7 +23,7 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
       description:
         'Returns detailed information about a WHMCS hosting service/product, including server assignment, billing cycle, and current status.',
       inputSchema: {
-        serviceId: { type: 'number', description: 'The WHMCS service/product ID' },
+        serviceId: z.number().describe('The WHMCS service/product ID'),
       },
     },
     async ({ serviceId }: { serviceId: number }) => {
@@ -47,8 +48,8 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
       description:
         'Returns activity-log entries related to provisioning module actions for a specific service.',
       inputSchema: {
-        serviceId: { type: 'number', description: 'The WHMCS service/product ID' },
-        limit: { type: 'number', description: 'Maximum number of log entries to return (default 50)' },
+        serviceId: z.number().describe('The WHMCS service/product ID'),
+        limit: z.number().optional().describe('Maximum number of log entries to return (default 50)'),
       },
     },
     async ({ serviceId, limit }: { serviceId: number; limit?: number }) => {
@@ -119,7 +120,7 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
       description:
         'Returns all services hosted on a specific server, with their statuses. Use with whmcs_get_server_usage to investigate a server.',
       inputSchema: {
-        serverId: { type: 'number', description: 'The WHMCS server ID' },
+        serverId: z.number().describe('The WHMCS server ID'),
       },
     },
     async ({ serverId }: { serverId: number }) => {
@@ -144,9 +145,9 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
       description:
         'Returns raw module debug log entries (request/response payloads) when available (WHMCS 8.x), or falls back to activity log module entries. Use to debug provisioning API failures.',
       inputSchema: {
-        serviceId: { type: 'number', description: 'Optional WHMCS service/product ID to filter by' },
-        module: { type: 'string', description: 'Optional module name to filter by (e.g. "cpanel")' },
-        limit: { type: 'number', description: 'Maximum number of log entries to return (default 50)' },
+        serviceId: z.number().optional().describe('Optional WHMCS service/product ID to filter by'),
+        module: z.string().optional().describe('Optional module name to filter by (e.g. "cpanel")'),
+        limit: z.number().optional().describe('Maximum number of log entries to return (default 50)'),
       },
     },
     async ({ serviceId, module, limit }: { serviceId?: number; module?: string; limit?: number }) => {
@@ -197,16 +198,9 @@ export function registerProvisioningTools(server: any, deps: ProvisioningToolDep
         'Re-runs a provisioning module command (Create, Suspend, Unsuspend, Terminate, ChangePackage, ChangePassword) for a service. ' +
         'This is a MUTATING action — requires WHMCS_ALLOW_MUTATIONS=true and confirm: true.',
       inputSchema: {
-        serviceId: { type: 'number', description: 'The WHMCS service/product ID' },
-        action: {
-          type: 'string',
-          description: 'Module action to run (default: Create)',
-          enum: ['Create', 'Suspend', 'Unsuspend', 'Terminate', 'ChangePackage', 'ChangePassword'],
-        },
-        confirm: {
-          type: 'boolean',
-          description: 'Must be true to confirm the mutating operation',
-        },
+        serviceId: z.number().describe('The WHMCS service/product ID'),
+        action: z.enum(['Create', 'Suspend', 'Unsuspend', 'Terminate', 'ChangePackage', 'ChangePassword']).optional().describe('Module action to run (default: Create)'),
+        confirm: z.boolean().optional().describe('Must be true to confirm the mutating operation'),
       },
     },
     async ({ serviceId, action, confirm }: { serviceId: number; action?: string; confirm?: boolean }) => {
