@@ -61,6 +61,25 @@ function classifyOrigin(item: RawInvoiceItem): ItemOrigin {
   return 'manual';
 }
 
+export interface PaymentAttempts {
+  invoiceid: number;
+  transactions: Array<{
+    id: number;
+    gateway: string;
+    date: string;
+    description: string;
+    amountin: string;
+    amountout: string;
+    transid: string;
+    refundid: number;
+  }>;
+  failedAttempts: Array<{
+    date: string;
+    gateway: string;
+    error: string;
+  }>;
+}
+
 export class InvoiceDomain {
   constructor(private client: WhmcsClient) {}
 
@@ -132,5 +151,47 @@ export class InvoiceDomain {
       currencycode: res.currencycode,
       items,
     };
+  }
+
+  async getPaymentAttempts(invoiceId: number): Promise<PaymentAttempts> {
+    const txRes = await this.client.call<{
+      transactions: { transaction: Array<{
+        id: number; gateway: string; date: string; description: string;
+        amountin: string; amountout: string; transid: string;
+        invoiceid: number; refundid: number;
+      }> };
+    }>('GetTransactions', { invoiceid: invoiceId });
+
+    const transactions = (txRes.transactions?.transaction ?? []).map((t) => ({
+      id: t.id,
+      gateway: t.gateway,
+      date: t.date,
+      description: t.description,
+      amountin: t.amountin,
+      amountout: t.amountout,
+      transid: t.transid,
+      refundid: t.refundid,
+    }));
+
+    const actRes = await this.client.call<{
+      activity: { entry: Array<{ date: string; description: string }> };
+    }>('GetActivityLog', {
+      description: `Invoice #${invoiceId}`,
+      limitnum: 100,
+    });
+
+    const failedAttempts = (actRes.activity?.entry ?? [])
+      .filter((e) => /Payment Attempt Failed/i.test(e.description) && e.description.includes(`#${invoiceId}`))
+      .map((e) => {
+        const gwMatch = /Gateway:\s*(\S+)/i.exec(e.description);
+        const errMatch = /Error:\s*(.+)$/i.exec(e.description);
+        return {
+          date: e.date,
+          gateway: gwMatch?.[1] ?? 'unknown',
+          error: errMatch?.[1] ?? e.description,
+        };
+      });
+
+    return { invoiceid: invoiceId, transactions, failedAttempts };
   }
 }

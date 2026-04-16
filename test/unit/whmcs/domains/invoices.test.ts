@@ -55,3 +55,26 @@ describe('InvoiceDomain.getInvoiceAudit', () => {
     expect(server.lastRequest()?.params.get('invoiceid')).toBe('5001');
   });
 });
+
+describe('InvoiceDomain.getPaymentAttempts', () => {
+  it('returns transactions linked to the invoice', async () => {
+    const attempts = await inv.getPaymentAttempts(5001);
+    expect(attempts.transactions).toHaveLength(2);
+    expect(attempts.transactions[0].gateway).toBe('stripe');
+    expect(attempts.transactions[0].amountin).toBe('20.00');
+    expect(attempts.transactions[1].amountin).toBe('30.00');
+  });
+
+  it('includes failed payment attempts from the activity log', async () => {
+    const attempts = await inv.getPaymentAttempts(5001);
+    expect(attempts.failedAttempts).toHaveLength(2);
+    expect(attempts.failedAttempts[0].error).toMatch(/insufficient funds/);
+    expect(attempts.failedAttempts[1].error).toMatch(/Card expired/);
+  });
+
+  it('sends invoiceid filter to GetTransactions', async () => {
+    await inv.getPaymentAttempts(5001);
+    const last = server.lastRequest();
+    expect(last?.params.get('action')).toBe('GetActivityLog');
+  });
+});
