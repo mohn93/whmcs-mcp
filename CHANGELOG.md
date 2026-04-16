@@ -5,7 +5,14 @@ All notable changes to the WHMCS MCP Server will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
+
+### Added
+- vitest test harness with in-process mock WHMCS server
+- `WhmcsClient` base class under `src/whmcs/client.ts`
+- Runtime WHMCS version probe + capability flags (`src/whmcs/version.ts`)
+- Domain split pattern: `src/whmcs/domains/system.ts`, `src/mcp/tools/system.ts`
+- PII-scrubbing fixture capture script (`npm run capture -- <Action>`)
 
 ## [1.2.0] - 2026-01-01
 
