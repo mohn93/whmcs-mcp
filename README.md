@@ -1,7 +1,5 @@
 # WHMCS MCP Server
 
-[![CI](https://github.com/scarecr0w12/whmcs-mcp-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/scarecr0w12/whmcs-mcp-tool/actions/workflows/ci.yml)
-[![Docker](https://github.com/scarecr0w12/whmcs-mcp-tool/actions/workflows/docker.yml/badge.svg)](https://github.com/scarecr0w12/whmcs-mcp-tool/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.0-green.svg)](https://modelcontextprotocol.io/)
@@ -9,9 +7,7 @@
 
 A Model Context Protocol (MCP) server for managing WHMCS (Web Host Manager Complete Solution) installations. This server provides comprehensive tools for managing clients, products, billing, support tickets, domains, and more through the WHMCS API.
 
-<a href="https://glama.ai/mcp/servers/@scarecr0w12/whmcs-mcp-server">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@scarecr0w12/whmcs-mcp-server/badge" />
-</a>
+> Forked from [scarecr0w12/whmcs-mcp-tool](https://github.com/scarecr0w12/whmcs-mcp-tool) and published as [`@mohn93/whmcs-mcp`](https://www.npmjs.com/package/@mohn93/whmcs-mcp). Not affiliated with WHMCS or WebPros.
 
 ## 📚 Documentation
 

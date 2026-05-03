@@ -1,14 +1,18 @@
 {
-  "name": "whmcs-mcp-server",
+  "name": "@mohn93/whmcs-mcp",
   "version": "1.2.0",
   "description": "MCP Server for managing WHMCS installations - clients, products, billing, tickets, domains, and integrations",
   "type": "module",
   "main": "dist/index.js",
-  "authors": [
-    "scarecr0w12"
+  "author": "Mohanned Binmiskeen",
+  "contributors": [
+    "scarecr0w12 (original author of whmcs-mcp-tool)"
   ],
   "bin": {
-    "whmcs-mcp-server": "./dist/index.js"
+    "whmcs-mcp": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
@@ -38,16 +42,15 @@
     "support-tickets",
     "domain-management"
   ],
-  "author": "",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/scarecr0w12/whmcs-mcp-tool.git"
+    "url": "git+https://github.com/mohn93/whmcs-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/scarecr0w12/whmcs-mcp-tool/issues"
+    "url": "https://github.com/mohn93/whmcs-mcp/issues"
   },
-  "homepage": "https://github.com/scarecr0w12/whmcs-mcp-tool#readme",
+  "homepage": "https://github.com/mohn93/whmcs-mcp#readme",
   "engines": {
     "node": ">=18.0.0"
   },
