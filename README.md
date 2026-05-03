@@ -1,5 +1,8 @@
 # WHMCS MCP Server
 
+[![CI](https://github.com/mohn93/whmcs-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mohn93/whmcs-mcp/actions/workflows/ci.yml)
+[![Docker](https://github.com/mohn93/whmcs-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/mohn93/whmcs-mcp/actions/workflows/docker.yml)
+[![npm](https://img.shields.io/npm/v/@mohn93/whmcs-mcp.svg)](https://www.npmjs.com/package/@mohn93/whmcs-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.0-green.svg)](https://modelcontextprotocol.io/)
